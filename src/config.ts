@@ -9,7 +9,7 @@ import { LinkPreset } from "./types/config";
 
 export const siteConfig: SiteConfig = {
 	title: "NineBytes Blog", // 网站标题
-	subtitle: "Lucky", // 网站副标题
+	subtitle: "owo", // 网站副标题
 	lang: "en", // 语言代码，例如 'en'、'zh_CN'、'ja' 等
 	themeColor: {
 		hue: 345, // 主题色的默认色相，范围 0 到 360。例如：红色 0、青色 200、蓝色 250、粉色 345

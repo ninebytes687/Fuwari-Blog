@@ -1,6 +1,7 @@
 ---
 import { profileConfig } from "../config";
 import { url } from "../utils/url-utils";
+import Countdown from "./Countdown.astro";
 const currentYear = new Date().getFullYear();
 ---
 
@@ -9,7 +10,7 @@ const currentYear = new Date().getFullYear();
     <div class="transition text-50 text-sm text-center">
         <!-- 博客运行时间 -->
         <div class="mb-1">
-            博客已运行：<span id="uptime" class="font-medium">加载中...</span>
+            <Countdown />
         </div>
         <!-- 第一行：版权 + RSS + Sitemap -->
         &copy; <span id="copyright-year">{currentYear}</span> {profileConfig.name}. All Rights Reserved. /
@@ -21,44 +22,3 @@ const currentYear = new Date().getFullYear();
         <a class="transition link text-[var(--primary)] font-medium" target="_blank" href="https://github.com/saicaca/fuwari">Fuwari</a>
     </div>
 </div>
-
-<script is:inline>
-(function() {
-    console.log('🕐 初始化博客运行时间...');
-    
-    function updateUptime() {
-        try {
-            const startDate = new Date("2024-07-14T00:00:00");
-            const now = new Date();
-            const diff = now - startDate;
-
-            const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-            const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-            const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-            const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-
-            const uptimeEl = document.getElementById("uptime");
-            
-            if (uptimeEl) {
-                uptimeEl.textContent = `${days} 天 ${hours} 小时 ${minutes} 分钟 ${seconds} 秒`;
-                
-                // 移除"加载中..."样式（如果有）
-                uptimeEl.classList.remove('text-neutral-400');
-                uptimeEl.classList.add('text-neutral-900', 'dark:text-neutral-100');
-            } else {
-                console.warn('⚠️ 未找到 #uptime 元素');
-            }
-        } catch (error) {
-            console.error('❌ 更新运行时间失败:', error);
-        }
-    }
-
-    // 立即执行一次
-    updateUptime();
-    
-    // 每秒更新
-    setInterval(updateUptime, 1000);
-    
-    console.log('✅ 运行时间组件已启动');
-})();
-</script>

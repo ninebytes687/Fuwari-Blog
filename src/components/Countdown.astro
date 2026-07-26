@@ -1,0 +1,44 @@
+---
+const targetDate = new Date('2024-07-14T00:00:00');
+const now = new Date();
+const timeDifference = Math.abs(targetDate.getTime() - now.getTime());
+
+const days = Math.floor(timeDifference / (1000 * 60 * 60 * 24));
+const hours = Math.floor((timeDifference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+const minutes = Math.floor((timeDifference % (1000 * 60 * 60)) / (1000 * 60));
+const seconds = Math.floor((timeDifference % (1000 * 60)) / 1000);
+---
+
+<div id="countdown">
+    博客已运行: {days} 天 {hours} 小时 {minutes} 分钟 {seconds} 秒
+</div>
+
+<style>
+  #countdown {
+    font-size: 14px;
+    text-align: center;
+    margin: 0;
+    padding: 0;
+  }
+</style>
+
+<script is:inline>
+  function updateCountdown() {
+    const targetDate = new Date('2024-07-14T00:00:00');
+    const now = new Date();
+    const timeDifference = Math.abs(targetDate - now);
+
+    const days = Math.floor(timeDifference / (1000 * 60 * 60 * 24));
+    const hours = Math.floor((timeDifference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    const minutes = Math.floor((timeDifference % (1000 * 60 * 60)) / (1000 * 60));
+    const seconds = Math.floor((timeDifference % (1000 * 60)) / 1000);
+
+    document.getElementById('countdown').innerText = `博客已运行: ${days} 天 ${hours} 小时 ${minutes} 分钟 ${seconds} 秒`;
+  }
+
+  // 立即执行一次
+  updateCountdown();
+
+  // 每秒更新
+  setInterval(updateCountdown, 1000);
+</script>
