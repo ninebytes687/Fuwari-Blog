@@ -23,24 +23,42 @@ const currentYear = new Date().getFullYear();
 </div>
 
 <script is:inline>
+(function() {
+    console.log('🕐 初始化博客运行时间...');
+    
+    function updateUptime() {
+        try {
+            const startDate = new Date("2024-07-14T00:00:00");
+            const now = new Date();
+            const diff = now - startDate;
 
-// 计算并实时更新博客运行时间
-function updateUptime() {
-    const startDate = new Date("2024-07-14T00:00:00");
-    const now = new Date();
-    const diff = now - startDate;
+            const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((diff % (1000 * 60)) / 1000);
 
-    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-    const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-
-    const uptimeEl = document.getElementById("uptime");
-    if (uptimeEl) {
-        uptimeEl.textContent = `${days} 天 ${hours} 小时 ${minutes} 分钟 ${seconds} 秒`;
+            const uptimeEl = document.getElementById("uptime");
+            
+            if (uptimeEl) {
+                uptimeEl.textContent = `${days} 天 ${hours} 小时 ${minutes} 分钟 ${seconds} 秒`;
+                
+                // 移除"加载中..."样式（如果有）
+                uptimeEl.classList.remove('text-neutral-400');
+                uptimeEl.classList.add('text-neutral-900', 'dark:text-neutral-100');
+            } else {
+                console.warn('⚠️ 未找到 #uptime 元素');
+            }
+        } catch (error) {
+            console.error('❌ 更新运行时间失败:', error);
+        }
     }
-}
 
-updateUptime();
-setInterval(updateUptime, 1000);
+    // 立即执行一次
+    updateUptime();
+    
+    // 每秒更新
+    setInterval(updateUptime, 1000);
+    
+    console.log('✅ 运行时间组件已启动');
+})();
 </script>
