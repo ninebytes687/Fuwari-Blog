@@ -148,120 +148,61 @@ import { friendLinks } from "../config/friends";
 </style>
 
 <script>
-    function initCopyLinks() {
-        let tooltip = document.querySelector(".copy-tooltip") as HTMLElement;
+    // 创建跟随鼠标的 tooltip
+    const tooltip = document.createElement("div");
+    tooltip.className = "copy-tooltip";
+    tooltip.textContent = "点击复制 ~";
+    document.body.appendChild(tooltip);
 
-        // 防止重复创建
-        if (!tooltip) {
-            tooltip = document.createElement("div");
-            tooltip.className = "copy-tooltip";
-            tooltip.textContent = "点击复制 ~";
-            document.body.appendChild(tooltip);
-        }
+    let hoveredEl: HTMLElement | null = null;
 
-        let hoveredEl: HTMLElement | null = null;
-
-
-        function moveTooltip(e: MouseEvent) {
-            tooltip.style.left = e.clientX + "px";
-            tooltip.style.top = e.clientY + "px";
-        }
-
-
-        document.querySelectorAll<HTMLElement>(".copy-link").forEach((el) => {
-
-            // 防止重复绑定
-            if (el.dataset.copyInit) return;
-
-            el.dataset.copyInit = "true";
-
-
-            el.addEventListener("mouseenter", (e) => {
-                hoveredEl = el;
-
-                tooltip.textContent = "点击复制 ~";
-                tooltip.classList.add("show");
-
-                moveTooltip(e as MouseEvent);
-            });
-
-
-            el.addEventListener("mousemove", (e) => {
-                moveTooltip(e as MouseEvent);
-            });
-
-
-            el.addEventListener("mouseleave", () => {
-                hoveredEl = null;
-                tooltip.classList.remove("show");
-            });
-
-
-            el.addEventListener("click", async (e) => {
-
-                e.preventDefault();
-                e.stopPropagation();
-
-
-                const text =
-                    el.dataset.copy ||
-                    el.textContent ||
-                    "";
-
-
-                try {
-
-                    await navigator.clipboard.writeText(text);
-
-                } catch {
-
-                    const ta = document.createElement("textarea");
-
-                    ta.value = text;
-                    ta.style.position = "fixed";
-                    ta.style.opacity = "0";
-
-                    document.body.appendChild(ta);
-
-                    ta.select();
-
-                    document.execCommand("copy");
-
-                    document.body.removeChild(ta);
-
-                }
-
-
-                tooltip.textContent = "✅ 已复制到剪贴板！";
-
-
-                setTimeout(() => {
-
-                    if (hoveredEl === el) {
-                        tooltip.textContent = "点击复制 ~";
-                    }
-
-                }, 2000);
-
-            });
-
-
-        });
-
+    function moveTooltip(e: MouseEvent) {
+        tooltip.style.left = e.clientX + "px";
+        tooltip.style.top = e.clientY + "px";
     }
 
+    document.querySelectorAll<HTMLElement>(".copy-link").forEach((el) => {
+        el.addEventListener("mouseenter", (e) => {
+            hoveredEl = el;
+            tooltip.textContent = "点击复制 ~";
+            tooltip.classList.add("show");
+            moveTooltip(e as MouseEvent);
+        });
 
-    // 首次加载
-    document.addEventListener(
-        "DOMContentLoaded",
-        initCopyLinks
-    );
+        el.addEventListener("mousemove", (e) => {
+            moveTooltip(e as MouseEvent);
+        });
 
+        el.addEventListener("mouseleave", () => {
+            hoveredEl = null;
+            tooltip.classList.remove("show");
+        });
 
-    // Astro 页面切换
-    document.addEventListener(
-        "astro:page-load",
-        initCopyLinks
-    );
-
+        el.addEventListener("click", async (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const text = el.dataset.copy || el.textContent || "";
+            try {
+                await navigator.clipboard.writeText(text);
+                tooltip.textContent = "✅ 已复制到剪贴板！";
+            } catch {
+                // 降级方案
+                const ta = document.createElement("textarea");
+                ta.value = text;
+                ta.style.position = "fixed";
+                ta.style.opacity = "0";
+                document.body.appendChild(ta);
+                ta.select();
+                document.execCommand("copy");
+                document.body.removeChild(ta);
+                tooltip.textContent = "✅ 已复制到剪贴板！";
+            }
+            // 2 秒后恢复提示文字
+            setTimeout(() => {
+                if (hoveredEl === el) {
+                    tooltip.textContent = "点击复制 ~";
+                }
+            }, 2000);
+        });
+    });
 </script>
