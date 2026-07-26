@@ -1,0 +1,208 @@
+---
+import I18nKey from "../i18n/i18nKey";
+import { i18n } from "../i18n/translation";
+import MainGridLayout from "../layouts/MainGridLayout.astro";
+import { friendLinks } from "../config/friends";
+---
+
+<MainGridLayout title={i18n(I18nKey.friends)} description={i18n(I18nKey.friends)}>
+    <!-- 顶部标题卡片 -->
+    <div class="flex w-full rounded-[var(--radius-large)] overflow-hidden relative min-h-32">
+        <div class="card-base z-10 px-9 py-6 relative w-full">
+            <h1 class="text-3xl font-bold mb-2 text-neutral-900 dark:text-neutral-100">{i18n(I18nKey.friends)} <span class="text-[var(--primary)] ml-2">({friendLinks.length})</span></h1>
+            <p class="text-neutral-600 dark:text-neutral-400">感谢各位朋友的友情链接~ ❤</p>
+        </div>
+    </div>
+
+    <!-- 友链卡片网格 -->
+    <div class="mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        {friendLinks.map((friend, i) => (
+            <a
+                href={friend.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                class="card-base scale-animation group p-4 flex items-center gap-4 active:scale-[0.98] hover:shadow-lg onload-animation"
+                style={`animation-delay: calc(var(--content-delay) + ${i * 40}ms)`}
+            >
+                <!-- 头像 -->
+                <div class="flex-shrink-0 w-16 h-16 rounded-full overflow-hidden border-2 border-[var(--card-bg)] group-hover:border-[var(--primary)] transition-all duration-300">
+                    <img
+                        src={friend.avatar}
+                        alt={friend.name}
+                        loading="lazy"
+                        class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                        onerror="this.onerror=null;this.src='https://api.dicebear.com/7.x/identicon/svg?seed=' + encodeURIComponent('{friend.name}');"
+                    />
+                </div>
+                <!-- 信息 -->
+                <div class="flex-1 min-w-0">
+                    <div class="font-bold text-base truncate text-neutral-900 dark:text-neutral-100 group-hover:text-[var(--primary)] transition-colors">
+                        {friend.name}
+                    </div>
+                    <div class="text-sm text-neutral-600 dark:text-neutral-400 line-clamp-2 mt-1 leading-snug">
+                        {friend.description}
+                    </div>
+                </div>
+            </a>
+        ))}
+    </div>
+
+    <!-- 如果没有友链的提示 -->
+    {friendLinks.length === 0 && (
+        <div class="card-base mt-6 p-8 text-center text-neutral-600 dark:text-neutral-400">
+            暂无友情链接，快来交换友链吧～
+        </div>
+    )}
+
+    <!-- 爱心分隔符 -->
+    <div class="mt-16 mb-10 flex items-center justify-center">
+        <div class="h-[1px] flex-1 bg-gradient-to-r from-transparent via-neutral-300 dark:via-neutral-700 to-transparent"></div>
+        <svg class="mx-4 text-[var(--primary)]" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 -960 960 960" fill="currentColor">
+            <path d="m480-120-58-52q-101-91-167-157T150-447.5Q111-500 95.5-544T80-634q0-94 63-157t157-63q52 0 99 22t81 62q34-40 81-62t99-22q94 0 157 63t63 157q0 46-15.5 90T810-447.5Q771-395 705-329T538-172l-58 52Z"/>
+        </svg>
+        <div class="h-[1px] flex-1 bg-gradient-to-r from-transparent via-neutral-300 dark:via-neutral-700 to-transparent"></div>
+    </div>
+
+    <!-- 友链申请须知 -->
+    <div class="card-base rounded-[var(--radius-large)] px-8 py-8 text-neutral-800 dark:text-neutral-200">
+        <h3 class="text-lg font-bold mb-4">须知⚠️</h3>
+        <p class="leading-relaxed mb-2">请您在申请友情链接之前仔细阅读并同意以下几条规则：</p>
+        <ul class="list-disc pl-6 space-y-2 mt-4 mb-8">
+            <li class="leading-relaxed">1. 🚫您的网站内不得含有：包括但不限于色情、血腥、暴力、犯罪、博彩以及其他违反<span class="text-red-500 dark:text-red-400 font-medium">中华人民共和国</span>所有法律的内容及链接。</li>
+            <li class="leading-relaxed">2. 😵‍💫您的网站内不能含有广告、搬运、导航、资源分享等非个人博客的网站内容。</li>
+            <li class="leading-relaxed">3. 🔒请确保您的网站拥有SSL/TLS证书且已接入HTTPS解析。</li>
+            <li class="leading-relaxed">4. 📚️仅支持个人博客类站点且要有一定数量的原创文章，空壳站点或搬运类站点不通过。</li>
+        </ul>
+
+        <h3 class="text-lg font-bold mt-6 mb-4">本站友情链接信息：</h3>
+        <ul class="list-none pl-0 space-y-2 mb-8">
+            <li class="leading-relaxed">网站名称：NineBytes Blog</li>
+            <li class="leading-relaxed">网站介绍：偏我来时不逢春</li>
+            <li class="leading-relaxed">
+                网站链接：<span class="copy-link relative inline-block cursor-pointer text-[var(--primary)] hover:underline" data-copy="https://blog.ninebytes.cc.cd">https://blog.ninebytes.cc.cd</span>
+            </li>
+            <li class="leading-relaxed">
+                头像链接：<span class="copy-link relative inline-block cursor-pointer text-[var(--primary)] hover:underline" data-copy="https://blog.ninebytes.cc.cd/profile.png">https://blog.ninebytes.cc.cd/profile.png</span>
+            </li>
+        </ul>
+        <p class="mt-2 mb-8 leading-relaxed">友链申请格式参考以上</p>
+
+        <h3 class="text-lg font-bold mt-6 mb-4">申请友情链接方式</h3>
+        <p class="leading-relaxed mb-8">发送邮件至 <a href="mailto:ninebytes@ninbytes.cc.cd" class="text-[var(--primary)] hover:underline">ninebytes@ninebytes.cc.cd</a></p>
+
+        <h3 class="text-lg font-bold mt-6 mb-4">最后</h3>
+        <p class="leading-relaxed">🎉 欢迎各位站长前来添加！所有友情链接申请均会在48H内回复并填写。</p>
+    </div>
+</MainGridLayout>
+
+<style>
+    .copy-link {
+        user-select: all;
+    }
+
+    /* 关键：使用 :global() 包裹动态创建的元素样式，避免 Astro scoped 哈希不匹配 */
+    :global(.copy-tooltip) {
+        position: fixed;
+        z-index: 9999;
+        pointer-events: none;
+        padding: 6px 12px;
+        background-color: rgba(17, 24, 39, 0.95);
+        color: #fff;
+        font-size: 13px;
+        border-radius: 8px;
+        white-space: nowrap;
+        opacity: 0;
+        transform: translate(-50%, -130%) scale(0.9);
+        transition: opacity 0.15s ease, transform 0.15s ease;
+        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+    }
+    :global(.copy-tooltip.show) {
+        opacity: 1;
+        transform: translate(-50%, -130%) scale(1);
+    }
+    :global(.copy-tooltip::after) {
+        content: "";
+        position: absolute;
+        top: 100%;
+        left: 50%;
+        transform: translateX(-50%);
+        border: 5px solid transparent;
+        border-top-color: rgba(17, 24, 39, 0.95);
+    }
+    @media (prefers-color-scheme: dark) {
+        :global(.copy-tooltip) {
+            background-color: rgba(229, 231, 235, 0.95);
+            color: #111827;
+        }
+        :global(.copy-tooltip::after) {
+            border-top-color: rgba(229, 231, 235, 0.95);
+        }
+    }
+    html.dark :global(.copy-tooltip) {
+        background-color: rgba(229, 231, 235, 0.95);
+        color: #111827;
+    }
+    html.dark :global(.copy-tooltip::after) {
+        border-top-color: rgba(229, 231, 235, 0.95);
+    }
+</style>
+
+<script>
+    // 创建跟随鼠标的 tooltip
+    const tooltip = document.createElement("div");
+    tooltip.className = "copy-tooltip";
+    tooltip.textContent = "点击复制 ~";
+    document.body.appendChild(tooltip);
+
+    let hoveredEl: HTMLElement | null = null;
+
+    function moveTooltip(e: MouseEvent) {
+        tooltip.style.left = e.clientX + "px";
+        tooltip.style.top = e.clientY + "px";
+    }
+
+    document.querySelectorAll<HTMLElement>(".copy-link").forEach((el) => {
+        el.addEventListener("mouseenter", (e) => {
+            hoveredEl = el;
+            tooltip.textContent = "点击复制 ~";
+            tooltip.classList.add("show");
+            moveTooltip(e as MouseEvent);
+        });
+
+        el.addEventListener("mousemove", (e) => {
+            moveTooltip(e as MouseEvent);
+        });
+
+        el.addEventListener("mouseleave", () => {
+            hoveredEl = null;
+            tooltip.classList.remove("show");
+        });
+
+        el.addEventListener("click", async (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const text = el.dataset.copy || el.textContent || "";
+            try {
+                await navigator.clipboard.writeText(text);
+                tooltip.textContent = "✅ 已复制到剪贴板！";
+            } catch {
+                // 降级方案
+                const ta = document.createElement("textarea");
+                ta.value = text;
+                ta.style.position = "fixed";
+                ta.style.opacity = "0";
+                document.body.appendChild(ta);
+                ta.select();
+                document.execCommand("copy");
+                document.body.removeChild(ta);
+                tooltip.textContent = "✅ 已复制到剪贴板！";
+            }
+            // 2 秒后恢复提示文字
+            setTimeout(() => {
+                if (hoveredEl === el) {
+                    tooltip.textContent = "点击复制 ~";
+                }
+            }, 2000);
+        });
+    });
+</script>

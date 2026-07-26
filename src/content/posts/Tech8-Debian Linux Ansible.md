@@ -1,0 +1,1784 @@
+---
+title: Debian Linux Ansible
+published: 2025-03-21
+updated: 2025-03-21
+description: "自动化配置管理和轻量级运维工具"
+image: "/covers/Ansible.png"
+tags: [Rocky Linux, Ansible]
+category: 'Tech'
+draft: false
+---
+
+# Ansible简介
+Ansible是一款开源的​自动化工具，由RedHat开发并维护，基于Python语言实现。它专注于简化 ​IT 基础设施的配置管理、应用部署和​任务自动化，遵循“基础设施即代码（IaC）”理念，通过声明式的语法实现高效运维。  
+
+**核心特性：**  
+ 1. 无客户端架构：通过 SSH（Linux）或 WinRM（Windows）直接管理节点，无需在目标机器上安装额外客户端，并且被管理节点会将结果返回至管理节点。  
+ 2. ​YAML 语法：使用易读的YAML文件（Playbook）定义自动化任务，降低学习成本。  
+ 3. ​幂等性（Idempotent）​：任务重复执行不会改变系统最终状态，避免意外错误。  
+ 4. ​模块化设计：提供上千个内置模块（如 copy, service, template），支持自定义扩展。  
+
+**核心模块：**
+- Inventory​：定义被管理的主机列表及分组，又被称为“资源池”或“资产”。  
+- ​Ad-Hoc：快速执行单条命令（如 ansible all -m ping 测试连通性）。  
+- ​Playbook：YAML格式的自动化流程脚本，描述任务集和配置策略。  
+- ​Role​：可复用的任务集合，实现逻辑分层与代码复用。  
+
+⚠️**注意：**  
+无论是Ad-Hoc或PlayBook所执行的某些功能不是由某些命令执行的，而是由一个个已经封装好的模块去执行的。比如复制功能的COPY模块；实现Ping功能的PING模块；执行Shell脚本的SHELL模块等等。  
+
+**先决条件：**  
+|管理节点|被管理节点|
+|---|---|
+|OpenSSH|OpenSSH|
+|Python Version >=2.6|Python Version >=2.4|
+|Ansible|/|
+****
+
+# 安装EPEL仓库
+使用`wget`命令下载EPEL的rpm包：`wget https://mirrors.aliyun.com/epel/epel-release-latest-9.noarch.rpm`
+```shell
+[root@server ~]# wget https://mirrors.aliyun.com/epel/epel-release-latest-9.noarch.rpm
+--2025-03-21 19:54:45--  https://mirrors.aliyun.com/epel/epel-release-latest-9.noarch.rpm
+Resolving mirrors.aliyun.com (mirrors.aliyun.com)... 123.182.95.105, 106.8.159.240, 106.8.159.237, ...
+Connecting to mirrors.aliyun.com (mirrors.aliyun.com)|123.182.95.105|:443... connected.
+HTTP request sent, awaiting response... 200 OK
+Length: 18952 (19K) [application/x-rpm]
+Saving to: ‘epel-release-latest-9.noarch.rpm’
+
+epel-release-latest-9.noarch.r 100%[===================================================>]  18.51K  --.-KB/s    in 0s      
+
+2025-03-21 19:54:45 (61.7 MB/s) - ‘epel-release-latest-9.noarch.rpm’ saved [18952/18952]
+```
+然后使用`dnf`命令安装下载好后的rpm包：`dnf install ./epel-release-latest-9.noarch.rpm`
+```shell
+[root@server ~]# dnf install ./epel-release-latest-9.noarch.rpm
+Last metadata expiration check: 0:04:28 ago on Fri 21 Mar 2025 07:50:43 PM CST.
+Dependencies resolved.
+===========================================================================================================================
+ Package                        Architecture             Version                      Repository                      Size
+===========================================================================================================================
+Installing:
+ epel-release                   noarch                   9-9.el9                      @commandline                    19 k
+
+Transaction Summary
+===========================================================================================================================
+Install  1 Package
+
+Total size: 19 k
+Installed size: 26 k
+Is this ok [y/N]: y
+Downloading Packages:
+Running transaction check
+Transaction check succeeded.
+Running transaction test
+Transaction test succeeded.
+Running transaction
+  Preparing        :                                                                                                   1/1 
+  Installing       : epel-release-9-9.el9.noarch                                                                       1/1 
+  Running scriptlet: epel-release-9-9.el9.noarch                                                                       1/1 
+Many EPEL packages require the CodeReady Builder (CRB) repository.
+It is recommended that you run /usr/bin/crb enable to enable the CRB repository.
+
+  Verifying        : epel-release-9-9.el9.noarch                                                                       1/1 
+
+Installed:
+  epel-release-9-9.el9.noarch                                                                                              
+
+Complete!
+
+```
+然后将EPEL仓库源替换为阿里EPEL源：  
+```shell
+sed -i.bak \
+    -e 's|^#baseurl=|baseurl=|g' \
+    -e 's|^metalink|#metalink|g' \
+    -e 's|https://download.example/pub/epel|https://mirrors.aliyun.com/epel|g' \
+    /etc/yum.repos.d/epel*.repo
+```
+如果在替换EPEL源时报错可以尝试强制重装EPEL rpm包。  
+**报错信息：**  
+```shell
+[root@server ~]# sed -e 's|^#baseurl=|baseurl=|g' \
+         -e 's|^metalink|#metalink|g' \
+         -e 's|https://download.example/pub/epel|https://mirrors.aliyun.com/epel|g' \
+         -i /etc/yum.repos.d/epel*.repo
+sed: can't read /etc/yum.repos.d/epel*.repo: No such file or directory
+# 已成功安装EPEL但EPEL文件丢失；
+```
+强制重装EPEL rpm包：  
+```shell
+[root@server ~]# dnf reinstall ./epel-release-latest-9.noarch.rpm
+Last metadata expiration check: 0:10:53 ago on Fri 21 Mar 2025 07:50:43 PM CST.
+Dependencies resolved.
+===========================================================================================================================
+ Package                        Architecture             Version                      Repository                      Size
+===========================================================================================================================
+Reinstalling:
+ epel-release                   noarch                   9-9.el9                      @commandline                    19 k
+
+Transaction Summary
+===========================================================================================================================
+
+Total size: 19 k
+Installed size: 26 k
+Is this ok [y/N]: y
+Downloading Packages:
+Running transaction check
+Transaction check succeeded.
+Running transaction test
+Transaction test succeeded.
+Running transaction
+  Preparing        :                                                                                                   1/1 
+  Reinstalling     : epel-release-9-9.el9.noarch                                                                       1/2 
+  Running scriptlet: epel-release-9-9.el9.noarch                                                                       1/2 
+  Cleanup          : epel-release-9-9.el9.noarch                                                                       2/2 
+  Running scriptlet: epel-release-9-9.el9.noarch                                                                       2/2 
+  Verifying        : epel-release-9-9.el9.noarch                                                                       1/2 
+  Verifying        : epel-release-9-9.el9.noarch                                                                       2/2 
+
+Reinstalled:
+  epel-release-9-9.el9.noarch                                                                                              
+
+Complete!
+```
+验证阿里云EPEL源：  
+```shell
+[root@server ~]# grep "mirrors.aliyun.com" /etc/yum.repos.d/epel*.repo
+/etc/yum.repos.d/epel-testing.repo:baseurl=https://mirrors.aliyun.com/epel/testing/9/Everything/$basearch/
+/etc/yum.repos.d/epel-testing.repo:baseurl=https://mirrors.aliyun.com/epel/testing/9/Everything/$basearch/debug/
+/etc/yum.repos.d/epel-testing.repo:baseurl=https://mirrors.aliyun.com/epel/testing/9/Everything/source/tree/
+```
+确认EPEL文件已生成：  
+```shell
+[root@server ~]# ls /etc/yum.repos.d/epel*.repo
+/etc/yum.repos.d/epel-cisco-openh264.repo  /etc/yum.repos.d/epel.repo  /etc/yum.repos.d/epel-testing.repo
+```
+清理旧缓存：dnf clean all  
+生成新缓存：dnf makecache  
+测试仓库可用性：dnf update  
+```shell
+[root@server ~]# dnf clean all && dnf makecache && dnf update
+17 files removed
+Error: Cannot find a valid baseurl for repo: epel-cisco-openh264
+Rocky Linux 9 - BaseOS                                                                      29 MB/s | 2.2 MB     00:00    
+Rocky Linux 9 - AppStream                                                                   38 MB/s | 7.9 MB     00:00    
+Ignoring repositories: epel-cisco-openh264
+Metadata cache created.
+Error: Cannot find a valid baseurl for repo: epel-cisco-openh264
+Ignoring repositories: epel-cisco-openh264
+Last metadata expiration check: 0:00:05 ago on Fri 21 Mar 2025 08:25:55 PM CST.
+Dependencies resolved.
+Nothing to do.
+Complete!
+```
+可以看到上面的输出中有2条有关epel-cisco-openh264的报错信息。  
+该仓库用于提供​Cisco的OpenH264编解码器​（主要用于WebRTC视频通话等场景），但阿里云可能未同步此仓库，导致其baseurl配置失效。  
+虽然不会影响后续Ansible的安装，但也可以禁用epel-cisco-openh264仓库：  
+`sed -i 's/enabled=1/enabled=0/g' /etc/yum.repos.d/epel-cisco-openh264.repo`。  
+清理缓存并生成新缓存：  
+`rm -rf /var/cache/dnf && dnf clean all && sudo dnf makecache`。  
+****
+
+# 安装Ansible
+**dnf安装：**
+使用`dnf install ansible-core`命令安装Ansible。  
+```shell
+[root@server ~]# dnf install ansible-core
+Last metadata expiration check: 0:00:28 ago on Fri 21 Mar 2025 08:30:39 PM CST.
+Dependencies resolved.
+===========================================================================================================================
+ Package                             Architecture          Version                          Repository                Size
+===========================================================================================================================
+Installing:
+ ansible-core                        x86_64                1:2.14.14-1.el9                  AppStream                2.2 M
+Installing dependencies:
+ git-core                            x86_64                2.43.0-1.el9                     AppStream                4.4 M
+ python3-cffi                        x86_64                1.14.5-5.el9                     baseos                   241 k
+ python3-cryptography                x86_64                36.0.1-4.el9                     baseos                   1.2 M
+ python3-packaging                   noarch                20.9-5.el9                       AppStream                 69 k
+ python3-ply                         noarch                3.11-14.el9.0.1                  baseos                   103 k
+ python3-pycparser                   noarch                2.20-6.el9                       baseos                   124 k
+ python3-pyparsing                   noarch                2.4.7-9.el9                      baseos                   150 k
+ python3-resolvelib                  noarch                0.5.4-5.el9                      AppStream                 29 k
+ sshpass                             x86_64                1.09-4.el9                       AppStream                 27 k
+
+Transaction Summary
+===========================================================================================================================
+Install  10 Packages
+
+Total size: 8.4 M
+Installed size: 38 M
+Is this ok [y/N]: y
+Downloading Packages:
+Running transaction check
+Transaction check succeeded.
+Running transaction test
+Transaction test succeeded.
+Running transaction
+  Preparing        :                                                                                                   1/1 
+  Installing       : git-core-2.43.0-1.el9.x86_64                                                                     1/10 
+  Installing       : sshpass-1.09-4.el9.x86_64                                                                        2/10 
+  Installing       : python3-resolvelib-0.5.4-5.el9.noarch                                                            3/10 
+  Installing       : python3-ply-3.11-14.el9.0.1.noarch                                                               4/10 
+  Installing       : python3-pycparser-2.20-6.el9.noarch                                                              5/10 
+  Installing       : python3-cffi-1.14.5-5.el9.x86_64                                                                 6/10 
+  Installing       : python3-cryptography-36.0.1-4.el9.x86_64                                                         7/10 
+  Installing       : python3-pyparsing-2.4.7-9.el9.noarch                                                             8/10 
+  Installing       : python3-packaging-20.9-5.el9.noarch                                                              9/10 
+  Installing       : ansible-core-1:2.14.14-1.el9.x86_64                                                             10/10 
+  Running scriptlet: ansible-core-1:2.14.14-1.el9.x86_64                                                             10/10 
+  Verifying        : python3-pyparsing-2.4.7-9.el9.noarch                                                             1/10 
+  Verifying        : python3-cryptography-36.0.1-4.el9.x86_64                                                         2/10 
+  Verifying        : python3-cffi-1.14.5-5.el9.x86_64                                                                 3/10 
+  Verifying        : python3-ply-3.11-14.el9.0.1.noarch                                                               4/10 
+  Verifying        : python3-pycparser-2.20-6.el9.noarch                                                              5/10 
+  Verifying        : python3-packaging-20.9-5.el9.noarch                                                              6/10 
+  Verifying        : python3-resolvelib-0.5.4-5.el9.noarch                                                            7/10 
+  Verifying        : sshpass-1.09-4.el9.x86_64                                                                        8/10 
+  Verifying        : git-core-2.43.0-1.el9.x86_64                                                                     9/10 
+  Verifying        : ansible-core-1:2.14.14-1.el9.x86_64                                                             10/10 
+
+Installed:
+  ansible-core-1:2.14.14-1.el9.x86_64        git-core-2.43.0-1.el9.x86_64           python3-cffi-1.14.5-5.el9.x86_64       
+  python3-cryptography-36.0.1-4.el9.x86_64   python3-packaging-20.9-5.el9.noarch    python3-ply-3.11-14.el9.0.1.noarch     
+  python3-pycparser-2.20-6.el9.noarch        python3-pyparsing-2.4.7-9.el9.noarch   python3-resolvelib-0.5.4-5.el9.noarch  
+  sshpass-1.09-4.el9.x86_64                 
+
+Complete!
+```
+验证安装：  
+```shell
+[root@server ~]# ansible --version
+ansible [core 2.14.14]
+  # Ansible配置文件位置，特殊情况下才会修改；
+  config file = /etc/ansible/ansible.cfg
+  # 配置模块位置[root用户路径；其他用户路径]；
+  configured module search path = ['/root/.ansible/plugins/modules', '/usr/share/ansible/plugins/modules']
+  # Ansible python模块位置；
+  ansible python module location = /usr/lib/python3.9/site-packages/ansible
+  ansible collection location = /root/.ansible/collections:/usr/share/ansible/collections
+  executable location = /usr/bin/ansible
+  # Ansible使用的Python版本；
+  python version = 3.9.18 (main, Jan 24 2024, 00:00:00) [GCC 11.4.1 20231218 (Red Hat 11.4.1-3)] (/usr/bin/python3)
+  jinja version = 3.1.2
+  libyaml = True
+```
+**pip安装：**  
+安装Python3和pip：`dnf install python3 python3-pip`。  
+pip安装ansible`pip3 install ansible`。
+****
+
+# 建立信任关系
+Ansible使用的是SSH协议控制被管理节点的，就需要把管理节点的公钥给到被管理节点。  
+**创建密钥对：**  
+管理节点创建密钥对：`ssh-keygen -t rsa`。
+```shell
+[root@server ~]# ssh-keygen -t rsa
+Generating public/private rsa key pair.
+Enter file in which to save the key (/root/.ssh/id_rsa): 
+Enter passphrase (empty for no passphrase): 
+Enter same passphrase again: 
+Your identification has been saved in /root/.ssh/id_rsa
+Your public key has been saved in /root/.ssh/id_rsa.pub
+The key fingerprint is:
+SHA256:3s7c0wCEO/h2Tt3bsU28/jeqo6biqUEwzbbH0WQFMDk root@server
+The key's randomart image is:
++---[RSA 3072]----+
+|     oo+oo       |
+|  o  E= . .      |
+| o + ..o o       |
+|  + o o o .      |
+|   o o .S. o . . |
+|  . .  .o.o o ..o|
+|   .   ..+.  o +=|
+|    ...  =.o. o++|
+|   .oo..o.=.+oo.=|
++----[SHA256]-----+
+```
+验证密钥对：`ls ~/.ssh`。  
+```shell
+[root@server ~]# ls ~/.ssh
+id_rsa  id_rsa.pub
+```
+**传输公钥至被管理节点：**
+使用命令：`ssh-copy-id root@192.168.201.12`。  
+- 请将"root@192.168.201.12"替换成你当前所在环境的用户名及主机地址；  
+
+```shell
+[root@server ~]# ssh-copy-id root@192.168.201.12
+/usr/bin/ssh-copy-id: INFO: Source of key(s) to be installed: "/root/.ssh/id_rsa.pub"
+The authenticity of host '192.168.201.12 (192.168.201.12)' can't be established.
+ED25519 key fingerprint is SHA256:2HrA0fsMIcuhKDEX/TOeNb7DcuMG4nNZlSLJ5fS4LdE.
+This key is not known by any other names
+Are you sure you want to continue connecting (yes/no/[fingerprint])? yes
+/usr/bin/ssh-copy-id: INFO: attempting to log in with the new key(s), to filter out any that are already installed
+/usr/bin/ssh-copy-id: INFO: 1 key(s) remain to be installed -- if you are prompted now it is to install the new keys
+root@192.168.201.12's password: 
+
+Number of key(s) added: 1
+
+Now try logging into the machine, with:   "ssh 'root@192.168.201.12'"
+and check to make sure that only the key(s) you wanted were added.
+```
+测试是否可以免密SSH登录：`ssh root@192.168.201.12`。
+```shell
+[root@server ~]# ssh root@192.168.201.12
+Activate the web console with: systemctl enable --now cockpit.socket
+
+Last login: Fri Mar 21 19:37:00 2025 from 192.168.201.1
+[root@slave1 ~]# exit
+logout
+Connection to 192.168.201.12 closed.
+```shell
+另一台被管理节点也是同样传输公钥。  
+使用命令：`ssh-copy-id root@192.168.201.13`。  
+```shell
+[root@server ~]# ssh-copy-id root@192.168.201.13
+/usr/bin/ssh-copy-id: INFO: Source of key(s) to be installed: "/root/.ssh/id_rsa.pub"
+The authenticity of host '192.168.201.13 (192.168.201.13)' can't be established.
+ED25519 key fingerprint is SHA256:2HrA0fsMIcuhKDEX/TOeNb7DcuMG4nNZlSLJ5fS4LdE.
+This host key is known by the following other names/addresses:
+    ~/.ssh/known_hosts:1: 192.168.201.12
+Are you sure you want to continue connecting (yes/no/[fingerprint])? yes
+/usr/bin/ssh-copy-id: INFO: attempting to log in with the new key(s), to filter out any that are already installed
+/usr/bin/ssh-copy-id: INFO: 1 key(s) remain to be installed -- if you are prompted now it is to install the new keys
+root@192.168.201.13's password: 
+
+Number of key(s) added: 1
+
+Now try logging into the machine, with:   "ssh 'root@192.168.201.13'"
+and check to make sure that only the key(s) you wanted were added.
+```
+****
+
+# Ansible资产
+Ansible资产分为：静态资产和动态资产。  
+
+**静态资产：**  
+
+定义：静态资产是一个​手动编写​​的文本文件（默认为/etc/ansible/hosts），支持INI格式或YAML格式，其中包含固定的主机列表和分组信息。  
+
+特点​：  
+- 手动维护​​：需要管理员手动编辑文件来添加、删除或修改主机。  
+- ​简单直接​​：适用于主机数量较少且变化不频繁的环境。  
+- ​支持分组和变量​​：可以在文件中定义主机组，并为组或主机设置变量。  
+
+适用场景：  
+- 小型或静态环境（如实验室、测试集群）；  
+- 需要手动控制主机列表的情况；  
+
+**动态资产：**  
+
+定义：动态资产通过​​外部脚本或API​​实时获取主机信息，适用于 ​云环境或 ​自动伸缩场景。  
+
+特点​​：  
+- ​自动更新​​：主机信息从外部系统（如云平台、CMDB）动态获取；  
+- ​减少人工维护​​：适合大规模、频繁变动的环境；  
+- 支持过滤和变量​​：可以根据标签、区域等条件动态分组；  
+****
+
+# 资产编写语法
+[1]未分组的主机：  
+这些没有具体归属的组，默认会被分配到`ALL`组。  
+```shell
+192.168.10.1
+10.10.10.11
+red.example.com
+```
+[2]分组的主机：  
+```shell
+[webservers]
+192.168.20.1
+10.20.10.11
+green.example.com
+```
+[3]连续的主机：  
+```shell
+# 192.168.30.1~192.168.30.15;
+192.168.30.[1:15]
+# www1.example.com~www9.example.com;
+www[1:9].example.com 
+```
+[4]注释掉的主机：
+```shell
+# 192.168.1.1
+```
+
+如何使用自定义资产？  
+通过-i参数指定自定义资产的相对路径或绝对路径即可。  
+`ansible all -i /etc/ansible/inventory.ini ...`  
+如何验证自定义资产？  
+`ansible -i inventory.ini test1_servers --list-hosts`  
+列出inventory.ini文件中test1_servers分组的主机；  
+```shell
+[root@server ~]# ansible -i /etc/ansible/inventory.ini test1_servers --list-hosts
+  hosts (3):
+    192.168.201.12
+    192.168.201.13
+    192.168.60.11
+```
+****
+
+# 资产选择器
+有时候我们只想对资产文件中的某一部分资产进行操作，而不是全部资产服务器。这时就可以使用Ansible资产选择器`PATTERN`。  
+基本语法格式：`ansible PATTERN -i inventory -m module -a argument`。  
+其中，`PATTERN`可以是资产文件中的存在的一台主机[主机名或IP]或一个组名；  
+`-i`：指定资产文件；  
+`-m`：指定使用的模块；  
+`-a`：关于使用的模块传递的参数；  
+[1]选择单台服务器：`ansible -i /etc/ansible/inventory.ini 192.168.201.12 --list-hosts`。  
+```shell
+[root@server ~]# ansible -i /etc/ansible/inventory.ini 192.168.201.12 --list-hosts
+  hosts (1):
+    192.168.201.12
+```
+也可以将IP替换为主机名：  
+```shell
+[root@server ~]# ansible -i /etc/ansible/inventory.ini test1.example.com --list-hosts
+  hosts (1):
+    test1.example.com
+```
+[2]选择多台主机使用","间隔：  
+```shell
+[root@server ~]# ansible -i /etc/ansible/inventory.ini 192.168.201.12,192.168.201.13 --list-hosts
+  hosts (2):
+    192.168.201.12
+    192.168.201.13
+```
+[3]选择一个组：  
+192.168.60.11同时属于test1_servers和test2_servers组，但是Ansible会自动去重，并不会对重复的主机执行2次操作。  
+```shell
+[root@server ~]# ansible -i /etc/ansible/inventory.ini all-servers --list-hosts
+  hosts (5):
+    192.168.201.12
+    192.168.201.13
+    192.168.60.11
+    192.168.100.11
+    192.168.100.12
+```
+[4]使用*匹配：  
+```shell
+[root@server ~]# ansible -i /etc/ansible/inventory.ini 192.168.50.* --list-hosts
+  hosts (10):
+    192.168.50.1
+    192.168.50.2
+    192.168.50.3
+    192.168.50.4
+    192.168.50.5
+    192.168.50.6
+    192.168.50.7
+    192.168.50.8
+    192.168.50.9
+    192.168.50.10
+```
+[5]使用逻辑匹配：  
+1. 列出test1_servers和test2_servers两个组的并集，并自动去重。  
+```shell
+[root@server ~]# ansible -i /etc/ansible/inventory.ini 'test1_servers:test2_servers' --list-hosts
+  hosts (5):
+    192.168.201.12
+    192.168.201.13
+    192.168.60.11
+    192.168.100.11
+    192.168.100.12
+```
+2. 列出test1_servers和test2_servers两个组的交集，即两组共有的主机。  
+```shell
+[root@server ~]# ansible -i /etc/ansible/inventory.ini 'test1_servers:&test2_servers' --list-hosts
+  hosts (1):
+    192.168.60.11
+```
+3. 列出在test1_servers中，不在test2中，及去除两组共有的主机后的主机的集合。  
+需要注意的是命令有先后顺序之分。  
+```shell
+[root@server ~]# ansible -i /etc/ansible/inventory.ini 'test1_servers:!test2_servers' --list-hosts
+  hosts (2):
+    192.168.201.12
+    192.168.201.13
+```
+示例图：  
+![8 1](https://s1.imagehub.cc/images/2025/04/26/e43718f304a5ff221de02eed6149ec80.png)
+4. 列出在test2_servers中，不在test1中，及去除两组共有的主机后的主机的集合。  
+```shell
+[root@server ~]# ansible -i /etc/ansible/inventory.ini 'test2_servers:!test1_servers' --list-hosts
+  hosts (2):
+    192.168.100.11
+    192.168.100.12
+```
+示例图：  
+![8 2](https://s1.imagehub.cc/images/2025/04/26/027262da3efd37d950a9a65e82f753b5.png)
+****
+
+# AD-Hoc
+**1.什么是AD-Hoc？**  
+AD-Hoc类似于在命令行内输入Shell命令，可以快速执行一些测试或执行一些临时命令。AD-Hoc和Ansible Playbook类似Shell命令和Shell脚本的区别。  
+如果执行命令需要增加某些判断逻辑或循环，亦或者是经常要使用的命令。这种情况下不适合使用AD-Hoc，适合使用Playbook。  
+
+基本语法格式：`ansible PATTERN [-i inventory] -m module -a argument`。  
+
+**2.Ansible模块类型：**  
+1. 核心模块：由Ansible官方团队提供维护的；  
+2. 附加模块：由各个社区提供。例如OpenStack、Docker社区等；  
+3. 自定义模块：当核心模块和附加模块无法满足要求时，用户可以自定义模块；  
+
+默认情况下，在安装Ansible 的时候， 核⼼模块和附加模块都已经安装⽽⽆需⽤户⼲预。  
+
+**3.联机帮助：**  
+Ansible 的核⼼模块和附加模块，数量是数以千计的。这样庞⼤的模块数量，对于任何⼀个接触Ansible的⼈来说都不可能将其完全记住和掌握使⽤。因此能够顺利使⽤Ansible的帮助⽂档，对我们来说是很有必要的。Ansible 的帮助⽂档，由它本身提供的命令ansible-doc实现。  
+
+常用帮助参数：  
+- 统计当前系统中已安装的Ansible模块总数：
+```shell
+[root@server ansible]# ansible-doc -l | wc -l
+8394
+```
+如果你只有几十个模块的话，那说明你安装的是core版的Ansible。只有核心模块也足够基础学习和使用了，附加模块非必需但实用。如果想要安装完整版Ansible，请使用pip安装。  
+
+- 查询某个模块的使用方法：`ansible-doc [-s] [*模块名]`  
+
+-s：可选，查看简化文档；  
+模块名：必选，模块名称；  
+**使用方法文档太长，不做展示。**  
+****
+
+# Ansible常用模块
+## command & shell
+
+**command模块作用：**  
+在目标节点上 ​​直接执行命令​​，​​不通过 shell 解析​​（如变量替换、管道等）。  
+command模块是AD-Hoc的默认模块，在执行AD-Hoc时，若不指定模块，则默认使用command模块。  
+
+**shell模块作用：**  
+在目标节点上 ​​通过shell环境执行命令​​，支持所有shell功能（管道、重定向等）。
+
+现在新建一个`inventory2.ini`。  
+```shell
+[test1_servers]
+192.168.201.12
+
+[test2_servers]
+192.168.201.13
+```
+执行命令：`ansible all -i /etc/ansible/inventory2.ini -a "echo 'hello'"`。  
+这条命令并没有指定模块，默认使用的是command模块。  
+```shell
+[root@server ~]# ansible all -i /etc/ansible/inventory2.ini -a "echo 'hello'"
+192.168.201.13 | CHANGED | rc=0 >>
+hello
+192.168.201.12 | CHANGED | rc=0 >>
+hello
+```
+现在再指定shell模块执行相同的命令：`ansible all -i /etc/ansible/inventory2.ini -m shell -a "echo 'hello'"`。  
+```shell
+[root@server ~]# ansible all -i /etc/ansible/inventory2.ini -m shell -a "echo 'hello'"
+192.168.201.13 | CHANGED | rc=0 >>
+hello
+192.168.201.12 | CHANGED | rc=0 >>
+hello
+```
+可以看到输出结果均是相同的。  
+
+**command和shell模块区别：**  
+1. commend模块无法执行shell内置命令及特性；  
+2. shell模块可以执行shell内置命令和特性。例如管道符等；  
+
+**commend & shell Example：**  
+使用shell模块+管道符过滤出e字母：  
+`ansible all -i /etc/ansible/inventory2.ini -m shell -a "echo 'hello' | grep -o 'e'"`。  
+```shell
+[root@server ~]# ansible all -i /etc/ansible/inventory2.ini -m shell -a "echo 'hello' | grep -o 'e'"
+192.168.201.13 | CHANGED | rc=0 >>
+e
+192.168.201.12 | CHANGED | rc=0 >>
+e
+```
+不指定模块，使用默认commend模块执行相同命令：  
+可以看到输出结果，因为commend模块无法使用管道符，无法过滤出"e"字母，直接将echo后的参数整个输出了出来。  
+`ansible all -i /etc/ansible/inventory2.ini -a "echo 'hello' | grep -o 'e'"`  
+```shell
+[root@server ~]# ansible all -i /etc/ansible/inventory2.ini -a "echo 'hello' | grep -o 'e'"
+192.168.201.13 | CHANGED | rc=0 >>
+hello | grep -o e
+192.168.201.12 | CHANGED | rc=0 >>
+hello | grep -o e
+```
+## script
+**作用：**  
+该模块会将脚本​​复制到被管理节点后执行​​（类似scp+ssh组合），但执行.py脚本目标节点必须配有Python环境。  
+
+**Example：**  
+首先创建一个.sh脚本，在root用户目录下创建一个lookme.txt文件。  
+```shell
+[root@server ~]# vi tsa1.sh
+[root@server ~]# cat tsa1.sh 
+touch /root/lookme.txt
+```
+现在先对一个组进行操作：  
+`ansible test1_servers -i /etc/ansible/inventory2.ini -m script -a "/root/tsa1.sh"`  
+-a选项内加上你要复制的脚本的绝对路径。  
+```shell
+[root@server ~]# ansible test1_servers -i /etc/ansible/inventory2.ini -m script -a "/root/tsa1.sh"
+192.168.201.12 | CHANGED => {
+    "changed": true, #已进行改变；
+    "rc": 0, #返回值为0；
+    "stderr": "Shared connection to 192.168.201.12 closed.\r\n",
+    "stderr_lines": [
+        "Shared connection to 192.168.201.12 closed."
+    ],
+    "stdout": "",
+    "stdout_lines": []
+}
+```
+然后就可以看到在被管理节点/root目录下有新创建的lookme.txt文件。  
+```shell
+[root@server ~]# ansible test1_servers -i /etc/ansible/inventory2.ini -m shell -a "ls /root"
+192.168.201.12 | CHANGED | rc=0 >>
+anaconda-ks.cfg
+lookme.txt
+```
+
+## copy
+
+**作用：**  
+将管理节点上的文件或目录​​复制到各被管理节点​​的指定路径，支持设置权限、属主等属性。  
+**常用参数：**
+- src：源文件路径（管理节点文件/目录）；
+- dest：目标路径（被管理节点文件/目录）；
+- backup：若被管理节点​​的源文件有变动，则在覆盖前备份原文件（yes/no）；
+- owner：设置新拷贝文件属主；
+- group：设置新拷贝文件属组；
+- mode：设置新拷贝文件权限（八进制或符号模式）；
+
+**src & dest Example：**  
+
+复制管理节点/root/tsb1.txt到被管理节点/root目录中：  
+`ansible test1_servers -i /etc/ansible/inventory2.ini -m copy -a "src=./tsb1.txt dest=/root/tsb1.txt"`  
+```shell
+[root@server ~]# ansible test1_servers -i /etc/ansible/inventory2.ini -m copy -a "src=./tsb1.txt dest=/root/tsb1.txt"
+192.168.201.12 | CHANGED => {
+#返回结果的被控节点地址 | 状态：改变；
+    "ansible_facts": {
+        "discovered_interpreter_python": "/usr/bin/python3" #使用的python解释器；
+    },
+    "changed": true, #已进行改变；
+    "checksum": "ebb92ca6d631204c2333dd9513e3c137ac13395d", #源文件的SHA1校验值；
+    "dest": "/root/tsb1.txt", #目标文件地址；
+    "gid": 0, #属组ID；
+    "group": "root", #所属组；
+    "md5sum": "4e1825cbf34d727cfad6a838d9939704", #目标文件MD5校验值；
+    "mode": "0644", #文件权限；
+    "owner": "root", #属主；
+    "secontext": "system_u:object_r:admin_home_t:s0",
+    "size": 6, #文件大小；
+    "src": "/root/.ansible/tmp/ansible-tmp-1744555001.9337418-7441-110356214628896/source", #临时脚本文件地址；
+    "state": "file",
+    "uid": 0
+}
+```
+然后就可以看到在被管理节点/root目录下有新创建的tsb1.txt文件。  
+```shell
+[root@server ~]# ansible test1_servers -i /etc/ansible/inventory2.ini -m shell -a "ls /root"
+192.168.201.12 | CHANGED | rc=0 >>
+anaconda-ks.cfg
+lookme.txt
+tsb1.txt
+```
+
+**backup Example：**  
+我们刚才从管理节点复制了tsb1.txt到被管理节点上，这份文件并没有进行变动。  
+现在我们将backup参数设置为yes看看效果。  
+```shell
+[root@server ~]# ansible test1_servers -i /etc/ansible/inventory2.ini -m copy -a "src=./tsb1.txt dest=/root/tsb1.txt backup=yes"
+192.168.201.12 | SUCCESS => {
+    "ansible_facts": {
+        "discovered_interpreter_python": "/usr/bin/python3"
+    },
+    "changed": false,
+    "checksum": "ebb92ca6d631204c2333dd9513e3c137ac13395d",
+    "dest": "/root/tsb1.txt",
+    "gid": 0,
+    "group": "root",
+    "mode": "0644",
+    "owner": "root",
+    "path": "/root/tsb1.txt",
+    "secontext": "system_u:object_r:admin_home_t:s0",
+    "size": 6,
+    "state": "file",
+    "uid": 0
+}
+```
+可以看到changed参数是false的。  
+若是现有的md5值与将要复制的文件的md5值一致的话，那么Ansible并不会进行任何操作，只会反馈记录给你，并不会进行覆盖文件和备份源文件的操作。  
+现在我们将被管理节点的tsb1.txt追加一点字符，让其进行改变：  
+```shell
+[root@slave1 ~]# echo "0413" >> tsb1.txt
+[root@slave1 ~]# cat tsb1.txt 
+2025
+0413
+```
+现在再次执行命令：  
+可以看到changed参数已经变为true。  
+```shell
+[root@server ~]# ansible test1_servers -i /etc/ansible/inventory2.ini -m copy -a "src=./tsb1.txt dest=/root/tsb1.txt backup=yes"
+192.168.201.12 | CHANGED => {
+    "ansible_facts": {
+        "discovered_interpreter_python": "/usr/bin/python3"
+    },
+    "backup_file": "/root/tsb1.txt.5644.2025-04-13@23:05:42~",
+    "changed": true,
+    "checksum": "ebb92ca6d631204c2333dd9513e3c137ac13395d",
+    "dest": "/root/tsb1.txt",
+    "gid": 0,
+    "group": "root",
+    "md5sum": "4e1825cbf34d727cfad6a838d9939704",
+    "mode": "0644",
+    "owner": "root",
+    "secontext": "system_u:object_r:admin_home_t:s0",
+    "size": 6,
+    "src": "/root/.ansible/tmp/ansible-tmp-1744556732.4213805-7558-258084477085640/source",
+    "state": "file",
+    "uid": 0
+}
+```
+验证：  
+Ansible备份文件为`tsb1.txt.5644.2025-04-13@23:05:42~`。  
+```shell
+[root@server ~]# ansible test1_servers -i /etc/ansible/inventory2.ini -m shell -a "ls /root"
+192.168.201.12 | CHANGED | rc=0 >>
+anaconda-ks.cfg
+lookme.txt
+tsb1.txt
+tsb1.txt.5644.2025-04-13@23:05:42~
+
+-----
+
+[root@server ~]# ansible test1_servers -i /etc/ansible/inventory2.ini -m shell -a "cat /root/tsb1*"
+192.168.201.12 | CHANGED | rc=0 >>
+2025 #未经追加变动的文件
+
+2025 #经过追加变动的文件
+0413
+```
+
+**owner & group Example：**  
+将tsb1.txt文件设置所属用户为ninebytes，所属用户组为ninebytes。  
+- 设置的所属用户或用户组须在目标主机上存在。否则使用`useradd -m -s /bin/bash -G [usergroup] [username]`创建。  
+
+```shell
+[root@server ~]# ansible test1_servers -i /etc/ansible/inventory2.ini -m copy -a "src=./tsb1.txt dest=/root/tsb1.txt owner=ninebytes group=ninebytes"
+192.168.201.12 | CHANGED => {
+    "ansible_facts": {
+        "discovered_interpreter_python": "/usr/bin/python3"
+    },
+    "changed": true,
+    "checksum": "ebb92ca6d631204c2333dd9513e3c137ac13395d",
+    "dest": "/root/tsb1.txt",
+    "gid": 1000,
+    "group": "ninebytes",
+    "mode": "0644",
+    "owner": "ninebytes",
+    "path": "/root/tsb1.txt",
+    "secontext": "system_u:object_r:admin_home_t:s0",
+    "size": 6,
+    "state": "file",
+    "uid": 1000
+}
+```
+验证：  
+可以看到tsb1.txt文件所属用户及所属用户组已经为ninebytes。  
+```
+[root@server ~]# ansible test1_servers -i /etc/ansible/inventory2.ini -m shell -a "ls -l /root"
+192.168.201.12 | CHANGED | rc=0 >>
+total 12
+-rw-------. 1 root      root      1197 Mar 20 18:13 anaconda-ks.cfg
+-rw-r--r--. 1 root      root         0 Apr 13 21:01 lookme.txt
+-rw-r--r--. 1 ninebytes ninebytes    6 Apr 13 23:05 tsb1.txt
+-rw-r--r--. 1 root      root        10 Apr 13 23:01 tsb1.txt.5644.2025-04-13@23:05:42~
+```
+
+**mode Example：**
+将tsb1权限设置为755：  
+```shell
+[root@server ~]# ansible test1_servers -i /etc/ansible/inventory2.ini -m copy -a "src=./tsb1.txt dest=/root/tsb1.txt mode=0755"
+192.168.201.12 | CHANGED => {
+    "ansible_facts": {
+        "discovered_interpreter_python": "/usr/bin/python3"
+    },
+    "changed": true,
+    "checksum": "ebb92ca6d631204c2333dd9513e3c137ac13395d",
+    "dest": "/root/tsb1.txt",
+    "gid": 1000,
+    "group": "ninebytes",
+    "mode": "0755",
+    "owner": "ninebytes",
+    "path": "/root/tsb1.txt",
+    "secontext": "system_u:object_r:admin_home_t:s0",
+    "size": 6,
+    "state": "file",
+    "uid": 1000
+}
+```
+可以看到mode参数已经变为了0755，但是所属用户及用户组依然是ninebytes。  
+现在我们将tsb1.txt文件删除，再次复制一份tsb1.txt文件，并将权限设置为755：  
+```shell
+[root@server ~]# ansible test1_servers -i /etc/ansible/inventory2.ini -m copy -a "src=./tsb1.txt dest=/root/tsb1.txt mode=0755"
+192.168.201.12 | CHANGED => {
+    "ansible_facts": {
+        "discovered_interpreter_python": "/usr/bin/python3"
+    },
+    "changed": true,
+    "checksum": "ebb92ca6d631204c2333dd9513e3c137ac13395d",
+    "dest": "/root/tsb1.txt",
+    "gid": 0,
+    "group": "root",
+    "md5sum": "4e1825cbf34d727cfad6a838d9939704",
+    "mode": "0755",
+    "owner": "root",
+    "secontext": "system_u:object_r:admin_home_t:s0",
+    "size": 6,
+    "src": "/root/.ansible/tmp/ansible-tmp-1744558397.1363587-7717-16903293464467/source",
+    "state": "file",
+    "uid": 0
+}
+```
+可以看到由于我们并没有指定文件的所属用户及用户组，所以默认归属于root用户。
+****
+
+## yum_repsitory
+**作用：**  
+用于管理​​YUM/DNF软件仓库​​的模块，适用于​​RHEL/CentOS/Fedora​​等基于RPM的系统。它可以添加、修改或删除YUM仓库配置，确保目标主机能够从指定源安装软件包。  
+
+**常用参数：**  
+- name：仓库名称，必选的参数；  
+- description：仓库描述，可选；  
+- baseurl：仓库地址，必须的参数。支持http://、ftp://、file://；  
+- file：自定义保存到被控节点的.repo文件名。不含.repo，默认name参数的值；  
+- enable：是否启用仓库；  
+- gpgcheck：是否开启GPG检查，没有默认值，一般依靠/etc/yum.conf文件中的配置；  
+- gpgkey：GPG公钥URL。前提为gpgcheck=yes；  
+- state：present(添加/更新)或absent(删除)；  
+
+**Example：**  
+添加EPEL源：  
+```shell
+[root@server ~]# ansible test1_servers -i /etc/ansible/inventory2.ini -m yum_repository -a "name=epel baseurl='https://download.fedoraproject.org/pub/epel/ $releasever/$basearch/' description='FEDORA EPEL'"
+192.168.201.12 | CHANGED => {
+    "ansible_facts": {
+        "discovered_interpreter_python": "/usr/bin/python3"
+    },
+    "changed": true, #changed值为true，改变成功；
+    "repo": "epel",
+    "state": "present" #state值为present(添加/更新)；
+}
+```
+验证：  
+```shell
+[root@server ~]# ansible test1_servers -i /etc/ansible/inventory2.ini -m shell -a "ls /etc/yum.repos.d/ && cat /etc/yum.repos.d/epel.repo"
+192.168.201.12 | CHANGED | rc=0 >>
+epel.repo
+rocky.repo
+rocky.repo.bak
+[epel]
+baseurl = https://download.fedoraproject.org/pub/epel/ //
+name = FEDORA EPEL
+```
+删除EPEL源：  
+删除EPEL源不需要添加EPEL源时的那么多参数，只需要指定name参数和state参数即可。name参数不需要指定文件后缀名。  
+
+```shell
+[root@server ~]# ansible test1_servers -i /etc/ansible/inventory2.ini -m yum_repository -a "name=epel state=absent"
+192.168.201.12 | CHANGED => {
+    "ansible_facts": {
+        "discovered_interpreter_python": "/usr/bin/python3"
+    },
+    "changed": true, #changed值为true，改变成功；
+    "repo": "epel",
+    "state": "absent" #state值为absent(删除)；
+}
+```
+验证：  
+```shell
+[root@server ~]# ansible test1_servers -i /etc/ansible/inventory -m shell -a "ls /etc/yum.repos.d/"
+192.168.201.12 | CHANGED | rc=0 >>
+rocky.repo
+rocky.repo.bak
+```
+需要注意的是state absent只能删除由Ansible管理过的repo文件，不能删除现有的或其它的.repo文件：  
+```shell
+[root@server ~]# ansible test1_servers -i /etc/ansible/inventory2.ini -m yum_repository -a "name=rocky state=absent"
+192.168.201.12 | SUCCESS => {
+    "ansible_facts": {
+        "discovered_interpreter_python": "/usr/bin/python3"
+    },
+    "changed": false, #changed值为flase，改变失败；
+    "repo": "rocky",
+    "state": "absent" #虽然state值为absent，但changed依然为flase，文件没有被删除;
+}
+```
+虽然返回的state值为absent，但/etc/yum.repos.d目录下还是有rocky.repo文件，并没有进行更改/删除。  
+```shell
+[root@server ~]# ansible test1_servers -i /etc/ansible/inventory -m shell -a "ls /etc/yum.repos.d/"
+192.168.201.12 | CHANGED | rc=0 >>
+rocky.repo
+rocky.repo.bak
+```
+
+## yum
+**作用：**  
+Ansible的yum模块用于在​RHEL/CentOS/Fedora​​等基于RPM的被管理机器上管理软件包。它是对yum包管理器的封装，支持安装、升级、卸载等操作。  
+
+⭐需要注意的是：  
+1. Ansible yum模块​​直接使用被管理节点（目标节点）的yum源​​，而不是通过管理节点下载后再传输；  
+2. yum模块的所有命令（安装、卸载、更新等）​​在被管理节点上直接运行​​，通过管理节点SSH远程执行。管理节点仅发送指令，不参与实际包下载或传输；  
+3. 管理节点使用yum模块前必须配置被管理节点上正确的yum仓库（例如Base、EPEL等），否则会因找不到包而失败。可通过enablerepo或disablerepo参数临时调整仓库；  
+
+**常用参数：**  
+- name：指定包名，支持列表或单个包，多个软件包以英文软件包间隔；  
+- state：包的状态：  
+  - present：安装，默认选择；  
+  - latest：升级到最新版；  
+  - absent：卸载；  
+- enablerepo：临时启用指定仓库；  
+- disablerepo：临时禁用仓库；  
+- exclude：排除特定包；  
+- update_cache：yes。更新缓存，相当于yum makecache；  
+- disable_gpg_check：yes。跳过GPG签名验证；  
+- allow_downgrade：yes。允许降级包版本；  
+
+**Example：**  
+安装nginx包。  
+```shell
+[root@server ~]# ansible test1_servers -i /etc/ansible/inventory2.ini -m yum -a "name=nginx state=present"
+192.168.201.12 | CHANGED => {
+    "ansible_facts": {
+        "discovered_interpreter_python": "/usr/bin/python3"
+    },
+    "changed": true, #changed值为true，改变成功；
+    "msg": "",
+    "rc": 0,
+    "results": [ #做出的结果；
+        "Installed: rocky-logos-httpd-90.15-2.el9.noarch",
+        "Installed: nginx-core-2:1.20.1-20.el9.0.1.x86_64",
+        "Installed: nginx-2:1.20.1-20.el9.0.1.x86_64",
+        "Installed: nginx-filesystem-2:1.20.1-20.el9.0.1.noarch"
+    ]
+}
+```
+卸载nginx包。  
+
+```shell
+[root@server ~]# ansible test1_servers -i /etc/ansible/inventory2.ini -m yum -a "name=nginx state=absent"
+192.168.201.12 | CHANGED => {
+    "ansible_facts": {
+        "discovered_interpreter_python": "/usr/bin/python3"
+    },
+    "changed": true, #changed值为true，改变成功；
+    "msg": "",
+    "rc": 0,
+    "results": [ #做出的结果；
+        "Removed: nginx-2:1.20.1-20.el9.0.1.x86_64"
+    ]
+}
+```
+安装Development tools软件包组：  
+```shell
+ansible test1_servers -i /etc/ansible/inventory2.ini -m yum -a "name='@Development tools' state=present"
+```
+
+⭐需要注意的是：  
+1. Development tools是一个​​软件包组，并不是单个的软件包；  
+2. "@"符号用于标识软件包组而不是单个软件包。它的作用类似于“分类标签”，用来批量安装一组功能相关的软件包。  
+3. 直接使用yum install @Development tools会报错，必须将组名用引号包裹。
+
+```shell
+[root@server ~]# ansible test1_servers -i /etc/ansible/inventory2.ini -m yum -a "name='@Development tools' state=present"
+192.168.201.12 | CHANGED => {
+    "ansible_facts": {
+        "discovered_interpreter_python": "/usr/bin/python3"
+    },
+    "changed": true,
+    "msg": "",
+    "rc": 0,
+    "results": [
+        "Group development installed.",
+        "Installed: java-1.8.0-openjdk-headless-1:1.8.0.442.b06-2.el9.x86_64",
+        "Installed: valgrind-devel-1:3.23.0-4.el9.x86_64",
+        "Installed: valgrind-1:3.23.0-4.el9.x86_64",
+
+        ---此处省略一堆包名---
+
+        "Installed: nss-softokn-3.101.0-10.el9_5.x86_64",
+        "Installed: nss-3.101.0-10.el9_5.x86_64",
+        "Installed: pulseaudio-libs-15.0-2.el9.x86_64",
+        "Removed: rpm-plugin-audit-4.16.1.3-29.el9.x86_64",
+        "Removed: rpm-plugin-selinux-4.16.1.3-29.el9.x86_64",
+        "Removed: rpm-plugin-systemd-inhibit-4.16.1.3-29.el9.x86_64",
+
+        ---此处省略一堆包名---
+
+        "Removed: rpm-4.16.1.3-29.el9.x86_64",
+        "Removed: rpm-build-libs-4.16.1.3-29.el9.x86_64",
+        "Removed: rpm-libs-4.16.1.3-29.el9.x86_64"
+    ]
+}
+```
+
+## systemd
+**作用：**  
+systemd模块用于管理系统服务，支持服务的启动、停止、重启、启用开机自启等操作。它是管理Linux系统服务的核心模块。  
+
+⚠️注意：  
+systemd在​​CentOS7和RHEL7​​及更高版本中才成为默认的初始化系统。CentOS 6及更早版本​​使用传统的为​​sysvinit​​或upstart，部分发行版使用，例如Ubuntu 14.04。  
+Ansible systemd模块底层调用systemctl命令。CentOS6没有systemctl​​，因此systemd模块无法正常工作。  
+解决办法：  
+使用service模块：Ansible提供了​​service模块​​，兼容sysvinit和upstart，适用于CentOS6。  
+
+**常用参数：**  
+- name：服务名称，.service可省；  
+- state：  
+  - started：启动；  
+  - stopped：停止；  
+  - restarted：重启；  
+  - reloaded：重载配置；  
+- enabled：是否开机自启；  
+- daemon_reload：是否先执行systemctl demon-reload，重新载入systemd，扫描新的或有变动的服务单元；  
+- masked：是否禁止服务启动（强制禁用）；  
+- scope：控制服务作用域：
+  - system：系统级；  
+  - user：用户级；  
+- no_block：非阻塞模式（不等待操作完成）；  
+
+**Example：**  
+
+重新加载systemd：  
+```shell
+[root@server ~]# ansible test1_servers -i /etc/ansible/inventory2.ini -m systemd -a "daemon_reload=yes"
+192.168.201.12 | SUCCESS => {
+    "ansible_facts": {
+        "discovered_interpreter_python": "/usr/bin/python3"
+    },
+    "changed": false,
+    "name": null,
+    "status": {}
+}
+```
+启动nginx服务：  
+```shell
+[root@server ~]# ansible test1_servers -i /etc/ansible/inventory2.ini -m systemd -a "name=nginx state=started"
+192.168.201.12 | CHANGED => {
+    "ansible_facts": {
+        "discovered_interpreter_python": "/usr/bin/python3"
+    },
+    "changed": true,
+    "name": "nginx",
+    "state": "started",
+    "status": {
+        "AccessSELinuxContext": "system_u:object_r:httpd_unit_file_t:s0",
+        "ActiveEnterTimestampMonotonic": "0",
+        "ActiveExitTimestampMonotonic": "0",
+
+
+        "WatchdogSignal": "6",
+        "WatchdogTimestampMonotonic": "0",
+        "WatchdogUSec": "infinity"
+    }
+}
+```
+
+**为什么​status输出这么长：**  
+systemd会记录服务的​​所有可能属性​​（包括默认值），即使某些字段未被显式配置。Ansible也会直接返回原始数据，便于调试和高级用例。  
+
+停止nginx服务：  
+```
+ansible test1_servers -i /etc/ansible/inventory2.ini -m systemd -a "name=nginx state=stopped"
+```
+
+重启nginx服务：  
+```
+ansible test1_servers -i /etc/ansible/inventory2.ini -m systemd -a "name=nginx state=restarted"
+```
+
+重新加载nginx服务：  
+```
+ansible test1_servers -i /etc/ansible/inventory2.ini -m systemd -a "name=nginx state=reloaded"
+```
+
+将nginx服务设置为开机自启：  
+```shell
+[root@server ~]# ansible test1_servers -i /etc/ansible/inventory2.ini -m systemd -a "name=nginx enabled=yes"
+192.168.201.12 | CHANGED => {
+    "ansible_facts": {
+        "discovered_interpreter_python": "/usr/bin/python3"
+    },
+    "changed": true,
+    "enabled": true,
+    "name": "nginx",
+    "status": {
+        "AccessSELinuxContext": "system_u:object_r:httpd_unit_file_t:s0",
+        "ActiveEnterTimestamp": "Wed 2025-04-16 21:40:42 CST",
+        "ActiveEnterTimestampMonotonic": "108010991815",
+
+        ---此处省略一堆返回值---
+
+        "WatchdogSignal": "6",
+        "WatchdogTimestampMonotonic": "0",
+        "WatchdogUSec": "0"
+    }
+}
+```
+
+## group
+**作用：**  
+group模块用于管理系统上的用户组。  
+
+**常用参数：**  
+- name：组名称，必选项；  
+- system：是否为系统组，yes/no，默认no；  
+- state：状态，present创建，absent删除，默认为present；  
+- gid：指定创建用户组的GID；  
+
+**Example：**  
+test1_servers组内所有主机创建ninebytes_admin用户组：  
+```shell
+[root@server ~]# ansible test1_servers -i /etc/ansible/inventory2.ini -m group -a "name=ninebytes_admin"
+192.168.201.12 | CHANGED => {
+    "ansible_facts": {
+        "discovered_interpreter_python": "/usr/bin/python3"
+    },
+    "changed": true, #changed值为true，改变成功；
+    "gid": 1001, #创建的ninebytes_admin用户组GID为1001；
+    "name": "ninebytes_admin", #名称为ninebytes_admin；
+    "state": "present", #状态为创建用户组；
+    "system": false #system=false，非系统组；
+}
+```
+去到slave1查看是否创建成功：
+```shell
+[root@slave1 ~]# grep "ninebytes_admin" /etc/group
+ninebytes_admin:x:1001:
+```
+test1_servers组内所有主机删除ninebytes_admin用户组：  
+```shell
+[root@server ~]# ansible test1_servers -i /etc/ansible/inventory2.ini -m group -a "state=absent name=ninebytes_admin"
+192.168.201.12 | CHANGED => {
+    "ansible_facts": {
+        "discovered_interpreter_python": "/usr/bin/python3"
+    },
+    "changed": true,
+    "name": "ninebytes_admin",
+    "state": "absent" #状态为删除用户组；
+}
+```
+
+## user
+**作用：**  
+user模块用于管理系统上的用户账户。  
+
+**常用参数：**  
+- name：用户名，必选项；  
+- state：状态，present创建，absent删除，默认为present；  
+- uid：用户UID；  
+- system：是否为系统用户；  
+- state：状态，present创建，absent删除，默认为present；  
+- group：设置用户主组；  
+- groups：设置用户的附加组，默认会把用户从其他已加入的组中删除；  
+- append：和groups配合时，设置为yes则不会将用户从其他已加入的组中删除；  
+- shell：指定用户登录时使用的shell程序或修改现有用户的默认shell，它决定了用户登录系统后使用的命令行环境；  
+- password：设置用户密码，由于会直接存入shadow，所以只接受加密值，默认不设置密码；  
+- update_password：设置的密码不同于原密码，则会更新密码；  
+- home：设置用户家目录；  
+- comment：用户描述信息；  
+- create_home：创建用户时是否创建家目录。默认创建，不创建则设置为no；  
+- remove：是否删除与用户关联的目录，例如家目录和邮箱目录，只有当state=absent时生效。删除设置为yes，默认no 不删除；  
+- generate_ssh_key：为用户生成ssh密钥。不会覆盖现有的ssh密钥；  
+- expires：设置用户账户过期时间，自动化管理用户账户的生命周期，直接跟上unix时间戳即可使用；  
+- ssh_key_bits：设置用户ssh密钥加密位数；  
+- ssh_key_type：设置用户秘钥加密类型，默认rsa，具体类型取决于被控节点；  
+- ssh_key_file：可以实现ssh密钥改名，或变更存放ssh密钥位置，默认为.ssh/id_rsa；  
+
+**Example：**  
+**【1】**：test1_servers组内所有主机创建用户testuser，设置为系统用户，登录密码为123456，加入testgroup1用户组。  
+由于user模块password参数只会接受加密值，所以在写AD-Hoc命令之前，要先生成一个加密的密码哈希，然后将这个密码哈希传递给一个变量，在此我使用的是py3加密的SHA512。  
+```shell
+[root@server ~]# PASS_HASH=$(python3 -c 'import crypt; print(crypt.crypt("123456", crypt.mksalt(crypt.METHOD_SHA512)))')
+```
+查看变量$PASS_HASH值：  
+```shell
+[root@server ~]# echo "$PASS_HASH"
+$6$9dz45qAaPAU8tuYx$h7WVmhXFjanf72Z6pvISpl3MnrJgSSqnnHON/5J5Msy7QtEsPmP021P.D8kKIBVQaNbvCGt9nduTeuPFgVTmT.
+```
+然后就可以编写AD-Hoc命令，将$PASS_HASH变量传递给password参数：  
+```shell
+[root@server ~]# ansible test1_servers -i /etc/ansible/inventory2.ini -m user -a "name=testuser system=yes password=$PASS_HASH group=testgroup1"
+192.168.201.12 | CHANGED => {
+    "ansible_facts": {
+        "discovered_interpreter_python": "/usr/bin/python3"
+    },
+    "append": false,
+    "changed": true,
+    "comment": "",
+    "group": 1001,
+    "home": "/home/testuser",
+    "move_home": false,
+    "name": "testuser",
+    "password": "NOT_LOGGING_PASSWORD",
+    "shell": "/bin/bash",
+    "state": "present",
+    "uid": 984
+}
+```
+可以看到password返回的值为NOT_LOGGING_PASSWORD。  
+这是由于安全保护机制，Ansible会主动屏蔽密码字段的输出，防止敏感信息泄露到日志或终端中，实际上密码已经成功配置，可以检查被控节点的/etc/shadow。  
+```shell
+[root@server ~]# ansible test1_servers -i /etc/ansible/inventory2.ini -m shell -a "grep testuser /etc/shadow"
+192.168.201.12 | CHANGED | rc=0 >>
+testuser:$6$9dz45qAaPAU8tuYx$h7WVmhXFjanf72Z6pvISpl3MnrJgSSqnnHON/5J5Msy7QtEsPmP021P.D8kKIBVQaNbvCGt9nduTeuPFgVTmT.:20240::::::
+```
+使用宿主机PowerShell SSH连接，密码123456：  
+```powershell
+PS C:\Users\NineBytes> ssh testuser@192.168.201.12
+testuser@192.168.201.12's password:
+Last login: Sun Jun  1 16:19:50 2025 from 192.168.201.1
+[testuser@slave1 ~]$ exit
+```
+
+**【2】**：test1_servers组内所有主机删除testuser用户。  
+```shell
+[root@server ~]# ansible test1_servers -i /etc/ansible/inventory2.ini -m user -a "name=testuser state=absent remove=yes"
+192.168.201.12 | CHANGED => {
+    "ansible_facts": {
+        "discovered_interpreter_python": "/usr/bin/python3"
+    },
+    "changed": true,
+    "force": false,
+    "name": "testuser",
+    "remove": false,
+    "state": "absent"
+}
+```
+下面来看一种可能会遇到的报错情况：  
+```shell
+[root@server ~]# ansible test1_servers -i /etc/ansible/inventory2.ini -m user -a "name=testuser state=absent remove=yes"
+192.168.201.12 | FAILED! => {
+    "ansible_facts": {
+        "discovered_interpreter_python": "/usr/bin/python3"
+    },
+    "changed": false,
+    "msg": "userdel: /var/spool/mail/testuser not owned by testuser, not removing\n",
+    "name": "testuser",
+    "rc": 12 #错误代码rc=12表示用户删除操作部分失败，主要是因为附属文件清理不成功；
+}
+```
+<Error>为什么会遇到"userdel: /var/spool/mail/testuser not owned by testuser, not removing\n"报错？</Error>
+这个错误是因为Ansible在尝试删除用户testuser时，遇到了/var/spool/mail/testuser邮件文件的所有权问题。  
+系统检测到/var/spool/mail/testuser文件的所有者不是testuser，因此拒绝删除，这是Ansible一种安全机制，防止误删不属于该用户的文件。  
+- 方法1：  
+
+先先手动删除邮件文件再删除用户：  
+```shell
+ansible test1_servers -i /etc/ansible/inventory2.ini -m shell -a "rm -f /var/spool/mail/testuser"
+ansible test1_servers -i /etc/ansible/inventory2.ini -m user -a "name=testuser state=absent remove=yes"
+```
+- 方法2：  
+
+强制删除，不推荐，确定安全后再使用：  
+```shell
+ansible test1_servers -i /etc/ansible/inventory2.ini -m user -a "name=testuser state=absent force=yes remove=yes"
+```
+```shell
+[root@server ~]# ansible test1_servers -i /etc/ansible/inventory2.ini -m user -a "name=testuser state=absent force=yes remove=yes"
+192.168.201.12 | CHANGED => {
+    "ansible_facts": {
+        "discovered_interpreter_python": "/usr/bin/python3"
+    },
+    "changed": true,
+    "force": true,
+    "name": "testuser",
+    "remove": true,
+    "state": "absent",
+    "stderr": "userdel: testuser mail spool (/var/spool/mail/testuser) not found\n",
+    "stderr_lines": [
+        "userdel: testuser mail spool (/var/spool/mail/testuser) not found"
+    ]
+}
+```
+**邮件目录的作用**：  
+大多数Linux发行版（如CentOS、RHEL、Ubuntu等）在创建用户时，会自动在/var/spool/mail/下生成一个与用户名同名的邮件文件。  
+即使你没有主动使用邮件功能，系统或某些服务（如cron）可能会通过邮件通知用户。  
+- Cron 作业的输出：  
+如果用户的cron任务有输出（标准输出或错误输出），系统会尝试将这些输出发送到用户的邮件文件（/var/spool/mail/用户名）。  
+
+- 系统通知：  
+某些守护进程（如systemd或审计日志）可能会通过邮件向用户发送告警或日志。  
+
+**【3】**：test1_servers组内所有主机创建用户testuser2，并为其创建秘钥对，秘钥类型为ecdsa。  
+```shell
+[root@server ~]# ansible test1_servers -i /etc/ansible/inventory2.ini -m user -a "name=testuser2 generate_ssh_key=yes ssh_key_type=ecdsa ssh_key_bits=256"
+192.168.201.12 | CHANGED => {
+    "ansible_facts": {
+        "discovered_interpreter_python": "/usr/bin/python3"
+    },
+    "append": false,
+    "changed": true,
+    "comment": "",
+    "group": 1002,
+    "home": "/home/testuser2",
+    "move_home": false,
+    "name": "testuser2",
+    "shell": "/bin/bash",
+    "ssh_fingerprint": "256 SHA256:RAwX2jXbFRdo7N3h01Tk4uD/bHX0POoTLZA9g2yS41I ansible-generated on slave1 (ECDSA)",
+    "ssh_key_file": "/home/testuser2/.ssh/id_ecdsa",
+    "ssh_public_key": "ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBLbGGD76qswvaVUG6bga7ivtaF2YIUGuPPMVLP7U1fCPyueTM5hiwy87ieRO0SAQV5uvIZt2ep87QyP6dHghSd8= ansible-generated on slave1",
+    "state": "present",
+    "uid": 1001
+}
+```
+查看密钥对是否创建成功：  
+```shell
+[root@server ~]# ansible test1_servers -i /etc/ansible/inventory2.ini -m shell -a "ls /home/testuser2/.ssh"
+192.168.201.12 | CHANGED | rc=0 >>
+id_ecdsa
+id_ecdsa.pub
+```
+**【4】**：test1_servers组内所有主机创建用户testuser3，设置登录密码为123456，加入用户组ninebytes_admin，且不影响用户原本加入的用户组，设置过期时间戳为1748822400，创建用户家目录。  
+```shell
+[root@server ~]# ansible test1_servers -i /etc/ansible/inventory2.ini -m user -a "name=testuser3 password=$PASS_HASH groups=ninebytes_admin append=yes expires=1748822400 create_home=yes"
+192.168.201.12 | CHANGED => {
+    "ansible_facts": {
+        "discovered_interpreter_python": "/usr/bin/python3"
+    },
+    "changed": true,
+    "comment": "",
+    "create_home": true,
+    "group": 1004,
+    "groups": "ninebytes_admin",
+    "home": "/home/testuser3",
+    "name": "testuser3",
+    "password": "NOT_LOGGING_PASSWORD",
+    "shell": "/bin/bash",
+    "state": "present",
+    "system": false,
+    "uid": 1001
+}
+```
+查看testuser3用户账户和密码过期信息：  
+```shell
+[root@server ~]# ansible test1_servers -i /etc/ansible/inventory2.ini -m shell -a "chage -l testuser3"
+192.168.201.12 | CHANGED | rc=0 >>
+Last password change                                    : Jun 01, 2025
+# 密码最后修改日期（用户创建时生成）;
+Password expires                                        : never
+#密码永不过期（默认）;
+Password inactive                                       : never
+#密码过期后无宽限期（默认）;
+Account expires                                         : Jun 02, 2025
+#账户将在 2025-06-02 自动失效;
+Minimum number of days between password change          : 0
+#允许立即修改密码（默认）;
+Maximum number of days between password change          : 99999
+#密码有效期极长（相当于never）;
+Number of days of warning before password expires       : 7
+#密码到期前 7 天警告（因密码永不过期未启用）;
+```
+**如何计算时间戳？**  
+```shell
+[root@server ~]# date -d "2025-06-02 08:00:00 +0800" +%s
+1748822400
+```
+参数说明：  
+- -d "2025-06-02 08:00:00 +0800"  
+指定北京时间的日期和时间（+0800表示东八区）。  
+- +%s  
+输出Unix时间戳（自1970-01-01 00:00:00 UTC起的秒数）。  
+
+**时间戳反向验证日期：**  
+```shell
+[root@server ~]# date -d @1748822400 '+%Y-%m-%d %H:%M:%S %z'
+2025-06-02 08:00:00 +0800
+```
+## file
+**作用：**  
+file模块是Ansible中用于管理文件和目录的核心模块之一，它可以创建文件、目录、符号链接，设置权限和属性，以及删除文件系统对象。  
+file和copy模块不同的是，file可以直接在被控主机上创建或删除文件/文件夹，但copy模块仅仅是将管理节点上的文件/文件夹复制到被控主机上。  
+
+file模块的作用包括但不限于以下：  
+- 创建空文件
+- 创建目录（包括多级目录）
+- 创建符号链接（软链接）
+- 修改文件/目录的权限、所有者、组等属性
+- 删除文件、目录或链接
+- 修改文件/目录的SElinux上下文
+
+**常用参数：**  
+- path：文件/目录的路径，为必选项；  
+- state：状态：
+  - file(默认)：常用于检查文件是否存在，存在则返回文件信息，不存在则不会被创建；  
+  - directory：如果目录不存在，则创建目录；  
+  - link：创建软链接；  
+  - hard：创建硬链接；  
+  - touch：若文件不存在，则会创建一个新文件，存在则仅更新其最后修改时间；  
+  - absent：删除目录、文件或取消链接文件；  
+- mode：设置权限模式，八进制或符号表示：mode：0644或mode：u=rw,g=r,o=r；  
+- owner：设置文件所有者；  
+- group：设置文件所属组；  
+- recurse：递归设置目录下文件的属性，仅对目录有效；  
+- src：软/硬链接的源文件的路径，当state=link或state=hard时使用；  
+- dest：软/硬链接文件的路径，当state=link或state=hard时使用；  
+- force：强制创建链接（会覆盖现有文件）；  
+- follow：是否跟踪符号链接；  
+- seuser/serole/setype/selevel：SELinux相关属性；  
+
+**Example：**  
+**【1】**：test1_servers组内所有主机在/tmp下创建test.conf文件。  
+```shell
+[root@server ~]# ansible test1_servers -i /etc/ansible/inventory2.ini -m file -a "path=/tmp/test.conf state=touch"
+192.168.201.12 | CHANGED => {
+    "ansible_facts": {
+        "discovered_interpreter_python": "/usr/bin/python3"
+    },
+    "changed": true,
+    "dest": "/tmp/test.conf",
+    "gid": 0,
+    "group": "root",
+    "mode": "0644",
+    "owner": "root",
+    "secontext": "unconfined_u:object_r:user_tmp_t:s0",
+    "size": 0,
+    "state": "file",
+    "uid": 0
+}
+```
+**【2】**：改变/tmp/test.conf文件所有者为nobody，权限改为644。  
+```shell
+[root@server ~]# ansible test1_servers -i /etc/ansible/inventory2.ini -m file -a "path=/tmp/test.conf owner=nobody group=nobody mode=0644"
+192.168.201.12 | CHANGED => {
+    "ansible_facts": {
+        "discovered_interpreter_python": "/usr/bin/python3"
+    },
+    "changed": true,
+    "gid": 65534,
+    "group": "nobody",
+    "mode": "0644",
+    "owner": "nobody",
+    "path": "/tmp/test.conf",
+    "secontext": "unconfined_u:object_r:user_tmp_t:s0",
+    "size": 0,
+    "state": "file",
+    "uid": 65534 #nobody用户的UID；
+}
+```
+**【3】**：为/tmp/test.conf创建软链接。  
+```shell
+[root@server ~]# ansible test1_servers -i /etc/ansible/inventory2.ini -m file -a "src=/tmp/test.conf dest=/tmp/test.link.conf state=link"
+192.168.201.12 | CHANGED => {
+    "ansible_facts": {
+        "discovered_interpreter_python": "/usr/bin/python3"
+    },
+    "changed": true,
+    "dest": "/tmp/test.link.conf", #软链接文件路径；
+    "gid": 0,
+    "group": "root",
+    "mode": "0777",
+    "owner": "root",
+    "secontext": "unconfined_u:object_r:user_tmp_t:s0",
+    "size": 14,
+    "src": "/tmp/test.conf", #软链接源文件路径；
+    "state": "link", #状态为软/硬链接；
+    "uid": 0
+}
+```
+验证软链接：  
+```shell
+[root@server ~]# ansible test1_servers -i /etc/ansible/inventory2.ini -m shell -a "ls -l /tmp"
+192.168.201.12 | CHANGED | rc=0 >>
+total 0
+drwx------. 2 root   root   56 Jun  2 15:19 ansible_ansible.legacy.command_payload_el631vwh
+drwxr-xr-x. 2 root   root   19 Apr 16 20:25 hsperfdata_root
+drwx------. 3 root   root   17 Mar 22 12:25 systemd-private-084dc7114c6f43279ad87767c4f39c44-bluetooth.service-gKgP3G
+drwx------. 3 root   root   17 Mar 22 12:25 systemd-private-084dc7114c6f43279ad87767c4f39c44-chronyd.service-YDHbNy
+drwx------. 3 root   root   17 Mar 22 12:25 systemd-private-084dc7114c6f43279ad87767c4f39c44-dbus-broker.service-i5eBCf
+drwx------. 3 root   root   17 Mar 22 12:25 systemd-private-084dc7114c6f43279ad87767c4f39c44-kdump.service-Tl8A1S
+drwx------. 3 root   root   17 Apr 16 21:40 systemd-private-084dc7114c6f43279ad87767c4f39c44-nginx.service-h6tWUO
+drwx------. 3 root   root   17 Mar 22 12:25 systemd-private-084dc7114c6f43279ad87767c4f39c44-systemd-logind.service-Nd78xF
+-rw-r--r--. 1 nobody nobody  0 Jun  2 00:38 test.conf #软链接源文件；
+lrwxrwxrwx. 1 root   root   14 Jun  2 15:15 test.link.conf -> /tmp/test.conf #test.link.conf软链接文件指向/tmp/test.conf；
+drwx------. 2 root   root    6 Apr 16 17:06 vmware-root_869-3988752892
+```
+**【4】**：在/tmp下创建目录testdir。  
+```shell
+[root@server ~]# ansible test1_servers -i /etc/ansible/inventory2.ini -m file -a "path=/tmp/testdir state=directory"
+192.168.201.12 | CHANGED => {
+    "ansible_facts": {
+        "discovered_interpreter_python": "/usr/bin/python3"
+    },
+    "changed": true,
+    "gid": 0,
+    "group": "root",
+    "mode": "0755",
+    "owner": "root",
+    "path": "/tmp/testdir",
+    "secontext": "unconfined_u:object_r:user_tmp_t:s0",
+    "size": 6,
+    "state": "directory",
+    "uid": 0
+}
+```
+验证目录testdir：  
+```shell
+[root@server ~]# ansible test1_servers -i /etc/ansible/inventory2.ini -m shell -a "ls -l /tmp"
+192.168.201.12 | CHANGED | rc=0 >>
+total 0
+drwx------. 2 root   root   56 Jun  2 15:33 ansible_ansible.legacy.command_payload_kyjyun2s
+drwxr-xr-x. 2 root   root   19 Apr 16 20:25 hsperfdata_root
+drwx------. 3 root   root   17 Mar 22 12:25 systemd-private-084dc7114c6f43279ad87767c4f39c44-bluetooth.service-gKgP3G
+drwx------. 3 root   root   17 Mar 22 12:25 systemd-private-084dc7114c6f43279ad87767c4f39c44-chronyd.service-YDHbNy
+drwx------. 3 root   root   17 Mar 22 12:25 systemd-private-084dc7114c6f43279ad87767c4f39c44-dbus-broker.service-i5eBCf
+drwx------. 3 root   root   17 Mar 22 12:25 systemd-private-084dc7114c6f43279ad87767c4f39c44-kdump.service-Tl8A1S
+drwx------. 3 root   root   17 Apr 16 21:40 systemd-private-084dc7114c6f43279ad87767c4f39c44-nginx.service-h6tWUO
+drwx------. 3 root   root   17 Mar 22 12:25 systemd-private-084dc7114c6f43279ad87767c4f39c44-systemd-logind.service-Nd78xF
+-rw-r--r--. 1 nobody nobody  0 Jun  2 00:38 test.conf
+drwxr-xr-x. 2 root   root    6 Jun  2 15:32 testdir
+lrwxrwxrwx. 1 root   root   14 Jun  2 15:15 test.link.conf -> /tmp/test.conf
+drwx------. 2 root   root    6 Apr 16 17:06 vmware-root_869-3988752892
+```
+**【5】**：取消/tmp/test.link.conf对/tmp/test.conf的软链接。  
+```shell
+[root@server ~]# ansible test1_servers -i /etc/ansible/inventory2.ini -m file -a "path=/tmp/test.link.conf state=absent"
+192.168.201.12 | CHANGED => {
+    "ansible_facts": {
+        "discovered_interpreter_python": "/usr/bin/python3"
+    },
+    "changed": true,
+    "path": "/tmp/test.link.conf",
+    "state": "absent"
+}
+```
+验证取消软链接：  
+```shell
+[root@server ~]# ansible test1_servers -i /etc/ansible/inventory2.ini -m shell -a "ls -l /tmp"
+192.168.201.12 | CHANGED | rc=0 >>
+total 0
+drwx------. 2 root   root   56 Jun  2 15:37 ansible_ansible.legacy.command_payload_q7j058e5
+drwxr-xr-x. 2 root   root   19 Apr 16 20:25 hsperfdata_root
+drwx------. 3 root   root   17 Mar 22 12:25 systemd-private-084dc7114c6f43279ad87767c4f39c44-bluetooth.service-gKgP3G
+drwx------. 3 root   root   17 Mar 22 12:25 systemd-private-084dc7114c6f43279ad87767c4f39c44-chronyd.service-YDHbNy
+drwx------. 3 root   root   17 Mar 22 12:25 systemd-private-084dc7114c6f43279ad87767c4f39c44-dbus-broker.service-i5eBCf
+drwx------. 3 root   root   17 Mar 22 12:25 systemd-private-084dc7114c6f43279ad87767c4f39c44-kdump.service-Tl8A1S
+drwx------. 3 root   root   17 Apr 16 21:40 systemd-private-084dc7114c6f43279ad87767c4f39c44-nginx.service-h6tWUO
+drwx------. 3 root   root   17 Mar 22 12:25 systemd-private-084dc7114c6f43279ad87767c4f39c44-systemd-logind.service-Nd78xF
+-rw-r--r--. 1 nobody nobody  0 Jun  2 00:38 test.conf
+drwxr-xr-x. 2 root   root    6 Jun  2 15:32 testdir
+drwx------. 2 root   root    6 Apr 16 17:06 vmware-root_869-3988752892
+```
+**【6】**：删除/tmp/test.conf。  
+```shell
+[root@server ~]# ansible test1_servers -i /etc/ansible/inventory2.ini -m file -a "path=/tmp/test.conf state=absent"
+192.168.201.12 | CHANGED => {
+    "ansible_facts": {
+        "discovered_interpreter_python": "/usr/bin/python3"
+    },
+    "changed": true,
+    "path": "/tmp/test.conf",
+    "state": "absent"
+}
+```
+验证删除/tmp/test.conf：  
+```shell
+[root@server ~]# ansible test1_servers -i /etc/ansible/inventory2.ini -m shell -a "ls -l /tmp"
+192.168.201.12 | CHANGED | rc=0 >>
+total 0
+drwx------. 2 root root 56 Jun  2 15:39 ansible_ansible.legacy.command_payload_i5xivqxc
+drwxr-xr-x. 2 root root 19 Apr 16 20:25 hsperfdata_root
+drwx------. 3 root root 17 Mar 22 12:25 systemd-private-084dc7114c6f43279ad87767c4f39c44-bluetooth.service-gKgP3G
+drwx------. 3 root root 17 Mar 22 12:25 systemd-private-084dc7114c6f43279ad87767c4f39c44-chronyd.service-YDHbNy
+drwx------. 3 root root 17 Mar 22 12:25 systemd-private-084dc7114c6f43279ad87767c4f39c44-dbus-broker.service-i5eBCf
+drwx------. 3 root root 17 Mar 22 12:25 systemd-private-084dc7114c6f43279ad87767c4f39c44-kdump.service-Tl8A1S
+drwx------. 3 root root 17 Apr 16 21:40 systemd-private-084dc7114c6f43279ad87767c4f39c44-nginx.service-h6tWUO
+drwx------. 3 root root 17 Mar 22 12:25 systemd-private-084dc7114c6f43279ad87767c4f39c44-systemd-logind.service-Nd78xF
+drwxr-xr-x. 2 root root  6 Jun  2 15:32 testdir
+drwx------. 2 root root  6 Apr 16 17:06 vmware-root_869-3988752892
+```
+**【7】**：为/etc/yum.repos.d创建硬链接到/tmp/rocky.hard.repo。  
+```shell
+[root@server ~]# ansible test1_servers -i /etc/ansible/inventory2.ini -m file -a "src=/etc/yum.repos.d/rocky.repo dest=/tmp/rocky.hard.repo state=hard"
+192.168.201.12 | CHANGED => {
+    "ansible_facts": {
+        "discovered_interpreter_python": "/usr/bin/python3"
+    },
+    "changed": true,
+    "dest": "/tmp/rocky.hard.repo",
+    "gid": 0,
+    "group": "root",
+    "mode": "0644",
+    "owner": "root",
+    "secontext": "system_u:object_r:system_conf_t:s0",
+    "size": 406,
+    "src": "/etc/yum.repos.d/rocky.repo",
+    "state": "hard",
+    "uid": 0
+}
+```
+验证硬链接：  
+```shell
+[root@server ~]# ansible test1_servers -i /etc/ansible/inventory2.ini -m shell -a "ls -l /tmp"
+192.168.201.12 | CHANGED | rc=0 >>
+total 4
+drwx------. 2 root root  56 Jun  2 15:57 ansible_ansible.legacy.command_payload_dqbgpf63
+drwxr-xr-x. 2 root root  19 Apr 16 20:25 hsperfdata_root
+-rw-r--r--. 2 root root 406 Apr 15 20:49 rocky.hard.repo
+drwx------. 3 root root  17 Mar 22 12:25 systemd-private-084dc7114c6f43279ad87767c4f39c44-bluetooth.service-gKgP3G
+drwx------. 3 root root  17 Mar 22 12:25 systemd-private-084dc7114c6f43279ad87767c4f39c44-chronyd.service-YDHbNy
+drwx------. 3 root root  17 Mar 22 12:25 systemd-private-084dc7114c6f43279ad87767c4f39c44-dbus-broker.service-i5eBCf
+drwx------. 3 root root  17 Mar 22 12:25 systemd-private-084dc7114c6f43279ad87767c4f39c44-kdump.service-Tl8A1S
+drwx------. 3 root root  17 Apr 16 21:40 systemd-private-084dc7114c6f43279ad87767c4f39c44-nginx.service-h6tWUO
+drwx------. 3 root root  17 Mar 22 12:25 systemd-private-084dc7114c6f43279ad87767c4f39c44-systemd-logind.service-Nd78xF
+drwxr-xr-x. 2 root root   6 Jun  2 15:32 testdir
+drwx------. 2 root root   6 Apr 16 17:06 vmware-root_869-3988752892
+```
+
+## cron
+**作用：**  
+cron模块用于管理被控端计划任务，等同于linux中的计划任务。  
+- 注意：使用Ansible创建的计划任务不能使用本地`crontab -e`编辑，否则Ansible将无法再次操作此计划任务。  
+
+**主要原因：**  
+1. 文件位置不同：  
+    - Ansible默认将cron任务写入/var/spool/cron/目录下的用户专用文件（如 var/spool/cron/root）；  
+    - crontab -e会将这些内容复制到临时文件编辑，但源文件仍由Ansible管理；  
+2. 格式差异：  
+    - Ansible会自动添加注释标记（如#Ansible: Job名）；  
+    - 手动编辑可能会破坏这些标记，导致Ansible无法正确识别和管理这些任务；  
+3. 同步问题：  
+    - 手动修改后，下次Ansible运行时可能会覆盖您的更改（因为 Ansible 只认它自己管理的任务）;  
+    - Ansible 使用"声明式"配置，会强制将系统状态变为playbook中定义的状态;  
+4. 权限问题：  
+    - Ansible通常以root或特定用户身份运行;  
+    - 如果您以不同用户身份运行crontab -e，可能看不到Ansible创建的任务;  
+
+**常用参数：**  
+- name：指定一个作业名字，必选项；  
+- job：指定要执行的内容，通常是脚本或一段内容；  
+- state：指定job状态，present创建，absent删除，默认为present；  
+- user：设置作业的用户，默认为当前用户；  
+- minute：指定分钟（0-59，\*：每分钟，\*/2：每两分钟，默认为\*）；   
+- hour：指定小时（0-23，\*：每分钟，\*/2：每两分钟，默认为\*）；  
+- day：指定天数（1-31，\*，：每天，\*/2：每两天，默认为\*）；  
+- weekday：指定星期（0-6，周日为0，默认为\*，即每星期；或者输入英文单词也可以：Sunday-Saturday）；  
+- month：月（1-12，\*：每月，\*/2：每两月，默认为\*）；  
+- special_time：预设时间(如@daily, @weekly等)；  
+- disabled：是否禁用该作业，默认no；  
+- backup：是否备份修改前的crontab，默认no；  
+- env：设置环境变量；  
+
+**Example：**  
+**【1】**：为root用户创建test job作业，每天8点运行。  
+```shell
+[root@server ~]# ansible test1_servers -i /etc/ansible/inventory2.ini -m cron -a "name='test job' minute=0 hour=8 job='ls / -alh > /dev/null' user=root"
+192.168.201.12 | CHANGED => {
+    "ansible_facts": {
+        "discovered_interpreter_python": "/usr/bin/python3"
+    },
+    "changed": true,
+    "envs": [],
+    "jobs": [
+        "test job"
+    ]
+}
+```
+列出当前用户的cron任务：  
+```shell
+[root@server ~]# ansible test1_servers -i /etc/ansible/inventory2.ini -m shell -a "crontab -l"
+192.168.201.12 | CHANGED | rc=0 >>
+#Ansible: test job
+0 8 * * * ls / -alh > /dev/null
+```
+- 使用sudo crontab -u username -l查看其他用户的cron任务。  
+
+**【2】**：为root用户创建complex test job作业，每工作日(周一到周五)上午9点到下午5点每小时运行一次。  
+```shell
+[root@server ~]# ansible test1_servers -i /etc/ansible/inventory2.ini -m cron -a "name='complex test job' minute=0 hour="9-17" weekday="1-5" job='ls / -alh > /dev/null' user=root"
+192.168.201.12 | CHANGED => {
+    "ansible_facts": {
+        "discovered_interpreter_python": "/usr/bin/python3"
+    },
+    "changed": true,
+    "envs": [],
+    "jobs": [
+        "test job",
+        "complex test job"
+    ]
+}
+```
+
+**【3】**：删除test job任务。  
+```shell
+[root@server ~]# ansible test1_servers -i /etc/ansible/inventory2.ini -m cron -a "name='test job' state=absent"
+192.168.201.12 | CHANGED => {
+    "ansible_facts": {
+        "discovered_interpreter_python": "/usr/bin/python3"
+    },
+    "changed": true,
+    "envs": [],
+    "jobs": [
+        "complex test job"
+    ]
+}
+```
+验证是否删除test job任务：  
+```shell
+[root@server ~]# ansible test1_servers -i /etc/ansible/inventory2.ini -m shell -a "crontab -l"
+192.168.201.12 | CHANGED | rc=0 >>
+#Ansible: complex test job
+0 9-17 * * 1-5 ls / -alh > /dev/null
+```
+
+**【4】**：禁用complex test job而非删除。  
+```shell
+[root@server ~]# ansible test1_servers -i /etc/ansible/inventory2.ini -m cron -a "name='complex test job' job='ls / -alh > /dev/null' disabled=yes"
+192.168.201.12 | CHANGED => {
+    "ansible_facts": {
+        "discovered_interpreter_python": "/usr/bin/python3"
+    },
+    "changed": true,
+    "envs": [],
+    "jobs": [
+        "complex test job"
+    ]
+}
+```
+- 注意：禁用作业需要同时提供name及job字段；  
+  否则会报错：You must specify 'job' to install a new cron job or variable；  
+
+**原因**：  
+1. Ansible的幂等性原则：  
+
+Ansible遵循幂等性（Idempotency），即无论执行多少次，结果都应该一致。  
+    - name只是任务的标识符（用于人类可读的描述），而job才是任务的实际内容。  
+    - 如果仅凭name禁用任务，Ansible无法确保它修改的是正确的任务（因为name可能重复或不唯一）。  
+    - job是唯一能精确匹配目标任务的字段，避免误操作。  
+2. cron的底层机制：  
+
+Linux crontab本身并不存储name，Ansible是通过在crontab中添加注释来标记任务归属的。  
+    ```shell
+    #Ansible: Backup Database
+    0 3 * * * /opt/backup.sh
+    ```
+    - 禁用任务实际上是在原任务前添加#注释（但保留#Ansible标记）：
+        ```shell
+        #Ansible: Backup Database
+        #0 3 * * * /opt/backup.sh
+        ```
+    - 如果仅提供name，Ansible无法确定要注释哪一行命令（因为可能有多个任务共享相同的name）；  
+
+验证complex test job作业是否禁用：  
+```shell
+[root@server ~]# ansible test1_servers -i /etc/ansible/inventory2.ini -m shell -a "crontab -l"
+192.168.201.12 | CHANGED | rc=0 >>
+#Ansible: complex test job
+#* * * * * ls / -alh > /dev/null
+[root@server ~]# 
+```
+
+## debug
+# 本文章无期限停止更新···

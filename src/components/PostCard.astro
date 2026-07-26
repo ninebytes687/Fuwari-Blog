@@ -38,7 +38,7 @@ const className = Astro.props.class;
 
 const hasCover = image !== undefined && image !== null && image !== "";
 
-const coverWidth = "28%";
+const coverWidth = "38%"; // 封面宽度适配12:7宽屏图片
 
 const { remarkPluginFrontmatter } = await entry.render();
 ---
@@ -80,8 +80,10 @@ const { remarkPluginFrontmatter } = await entry.render();
     {hasCover && <a href={url} aria-label={title}
                     class:list={["group",
                         "max-h-[20vh] md:max-h-none mx-4 mt-4 -mb-2 md:mb-0 md:mx-0 md:mt-0",
-                        "md:w-[var(--coverWidth)] relative md:absolute md:top-3 md:bottom-3 md:right-3 rounded-xl overflow-hidden active:scale-95"
-                    ]} >
+                        // 封面容器改为固定宽高比 1200:700（和你的图片比例一致）
+                        "md:w-[var(--coverWidth)] relative md:absolute md:top-1/2 md:-translate-y-1/2 md:right-3 rounded-xl overflow-hidden active:scale-95"
+                    ]}
+                    style={hasCover ? 'aspect-ratio: 1200 / 700;' : ''} >
         <div class="absolute pointer-events-none z-10 w-full h-full group-hover:bg-black/30 group-active:bg-black/50 transition"></div>
         <div class="absolute pointer-events-none z-20 w-full h-full flex items-center justify-center ">
             <Icon name="material-symbols:chevron-right-rounded"
@@ -89,7 +91,7 @@ const { remarkPluginFrontmatter } = await entry.render();
             </Icon>
         </div>
         <ImageWrapper src={image} basePath={path.join("content/posts/", getDir(entry.id))} alt="Cover Image of the Post"
-                  class="w-full h-full">
+                  class="w-full h-full bg-[var(--card-bg)]" fit="contain">
         </ImageWrapper>
     </a>}
 

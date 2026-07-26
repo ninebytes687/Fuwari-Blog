@@ -1,0 +1,119 @@
+---
+title: 重装系统之胎教级教程
+published: 2025-01-19
+updated: 2025-01-19
+description: "学不会的适人握持"
+image: "/covers/重装系统.png"
+tags: [Windows]
+category: 'Tech'
+draft: false
+---
+
+最近家里的台式电脑系统崩了，进不去系统，只能进BIOS。照着这个机会正好写一个重装系统之胎教级的教程。
+
+# 准备工作
+- 1个容量大于16GB的U盘
+- PE环境制作软件
+- 系统镜像
+
+# 下载微PE
+制作PE环境的软件有很多，就不一一列举了，我这里使用的是微PE。  
+首先打开[微PE官网](https://www.wepe.com.cn/)，点击右上角的`下载`
+![5 1](https://s1.imagehub.cc/images/2025/04/28/8102258f7ad03eb616410dfb106ce639.png)
+如果你要装的机器是近几年较新的机器，例如英特尔酷睿13、14代，或者是AMD锐龙R5、R7、R9等系列，那就选择下载微PE工具箱新版。  
+如果你的机器是已经淘汰下来的机器，例如英特尔酷睿2代、3代等，那就选择下载微PE工具箱旧版本。
+![5 2](https://s1.imagehub.cc/images/2025/04/28/455a3ded726bb06bb5e5eb5efe89916a.png)
+这里会提示捐赠，可以点击`先不捐赠`。如果你有一定的经济实力，请扫码捐赠，毕竟维护不易。
+![5 3](https://s1.imagehub.cc/images/2025/04/28/f01ab01d7eb084994d901a320fb47c6b.png)
+这时候会让你选择下载64位还是32位，自行去搜索你的CPU架构是32位还是64位。
+- Tips：最近几年出的CPU均是64位的
+
+![5 4](https://s1.imagehub.cc/images/2025/04/28/fe7bc97de92b5efd1978da04559511d5.png)
+# 制作系统U盘
+:::caution
+制作系统U盘会格式化U盘，U盘内的所有数据都将丢失，请做好数据备份！
+:::
+:::caution
+制作系统U盘会格式化U盘，U盘内的所有数据都将丢失，请做好数据备份！
+:::
+:::caution
+制作系统U盘会格式化U盘，U盘内的所有数据都将丢失，请做好数据备份！
+:::
+
+下载好后，将U盘插入电脑USB接口。  
+打开微PE，点击右下角的USB接口图标，安装PE到U盘。不要点击中间的"立即安装进系统"，这样会把PE环境安装到你现在操作的电脑上。
+![5 5](https://s1.imagehub.cc/images/2025/04/28/3513ef34848c04cb33884fab9c80ee4b.png)
+如果你电脑上只插着1个U盘，那微PE就会正确识别到它。  
+如果你电脑上有插着多个U盘，在`待写入U盘`中，请选择正确的U盘。  
+其他配置默认就行，你也可以在`U盘卷标`内填写一个好辨识的名字。
+![5 6](https://s1.imagehub.cc/images/2025/04/28/e39dd8c7a70985c856a3cd79422155c7.png)
+在你点下`开始制作`按钮之前，你还有机会检查你的U盘内是否还有重要数据。
+![5 7](https://s1.imagehub.cc/images/2025/04/28/92d7157429d4504f66387b22ea3e33f6.png)
+等待制作完成。
+![5 8](https://s1.imagehub.cc/images/2025/04/28/8151501af8e67c10950440a3b787b82d.png)
+系统U盘制作完成。
+![5 9](https://s1.imagehub.cc/images/2025/04/28/aa47469d6faa90969dc4d737548c168b.png)
+
+# 下载系统镜像
+我这里访问的是[HelloWindows](https://hellowindows.cn/)，其他好用的镜像站推荐I Tell You，[旧站](https://msdn.itellyou.cn/)最新只有Windows10 1909，[新站](https://next.itellyou.cn/Original/Index)有最新的Windows11 24H2，不过需要花1分钟时间注册。  
+选择好你想要安装的系统镜像后，点击`ed2K`下载或`BT`下载均可，此时会将下载链接复制到剪贴板内。还需要搭配下载器才能食用。  
+下载器推荐比特彗星，如果比特彗星下载慢的话，可以尝试吸血雷。
+![5 10](https://s1.imagehub.cc/images/2025/04/28/2ddcbe189d2afb5a2be11a7ef8ce9e7e.png)
+比特彗星下载太慢了，所以用的吸血雷。
+![5 11](https://s1.imagehub.cc/images/2025/04/28/2c3625beef94f435e70c31146d4461b5.png)
+镜像下载完成后，复制到U盘内，弹出U盘即可。
+- Tips：注意不要复制镜像文件到EFI分区内
+
+# 进入PE环境
+将系统U盘插入要重装系统的电脑，最好插在主机背板后，哪个USB接口速率最快插哪个。  
+~~（懒得爬到背板后面去插了...）~~
+![5 12](https://s1.imagehub.cc/images/2025/04/28/3f1424ad57e37c7e58099651e4bd734b.jpg)
+在开机之前你还要确认主板BIOS快捷键是哪个，自行Bing搜索。  
+插好后按下开机键，然后狂按BIOS快捷键，进入BIOS界面，在`启动`界面设置第1启动项为系统U盘。
+![5 13](https://s1.imagehub.cc/images/2025/04/28/1848f17ff53da10e8663196d6ffabae3.jpg)
+选择到正确的U盘型号。选择好后，按下`F10`保存并退出，电脑会自动重启。
+![5 14](https://s1.imagehub.cc/images/2025/04/28/b365a7fafe82d104f99258250932aa21.jpg)
+如果你的设置没有问题的话，就会进入PE系统界面。
+
+# 硬盘分区
+然后打开桌面上的DiskGenius。  
+选择你要安装系统的硬盘。点击`删除所有分区`。
+![5 15](https://s1.imagehub.cc/images/2025/04/28/136e8f8b0050f0f15413df63b1b23e1f.jpg)
+点击`是`。
+![5 16](https://s1.imagehub.cc/images/2025/04/28/50ca48c47b7968ed18ac2b2fb198ee7a.jpg)
+随后点击左上角的`保存更改`。
+![5 17](https://s1.imagehub.cc/images/2025/04/28/28bdd10907c71f11d53007bfae104b57.jpg)
+
+# 系统安装
+分区完成后，在系统U盘内找到你复制的镜像文件，并双击打开它。
+![5 18](https://s1.imagehub.cc/images/2025/04/28/516f1fa4a4caeff11871725ce5a52a9d.jpg)
+然后找到`setup.exe`程序，双击运行。
+![5 19](https://s1.imagehub.cc/images/2025/04/28/b087eaf9a993c2306ee66c58e712926d.jpg)
+选项默认，点击`下一页`。
+![5 20](https://s1.imagehub.cc/images/2025/04/28/5847143a4c9318d7533404288f7babd3.jpg)
+点击`现在安装`。
+![5 21](https://s1.imagehub.cc/images/2025/04/28/732e4d487f89b635561c672ba856b6d8.jpg)
+选择你想安装的操作系统类型。
+![5 22](https://s1.imagehub.cc/images/2025/04/28/d8ee0dd94484743d74a5569bd9437fe2.jpg)
+同意许可条款。
+![5 23](https://s1.imagehub.cc/images/2025/04/28/0b26647cf439daaefd6607cb235887a2.jpg)
+选择`自定义`安装类型。
+![5 24](https://s1.imagehub.cc/images/2025/04/28/ce44bbe93932b5728fbadbe2014006b9.jpg)
+首先确认这是不是你的硬盘大小，然后再单击选择到`未分配的空间`，然后点击`下一页`即可。
+![5 25](https://s1.imagehub.cc/images/2025/04/28/6349fda1570afe694c69fac7c62d8326.jpg)
+等待安装完成。
+![5 26](https://s1.imagehub.cc/images/2025/04/28/930fcd003822cbc141388b01c3ffcd7c.jpg)
+安装完成之后，会有10秒的等待时间，等待重启即可。  
+⚠️提示：在重启电脑黑屏的时候，请快速将U盘从电脑USB插口上拔除，以免再次进入BIOS界面。
+![5 27](https://s1.imagehub.cc/images/2025/04/28/65fed22c03232ea7c5c8f6ae318d5e7b.jpg)
+
+# 配置系统
+等待电脑重启完成后，会进入配置系统界面，配置系统很简单，只要你认识中文就会配置。
+![5 28](https://s1.imagehub.cc/images/2025/04/28/53d23298cd59c162a1b7c5bf874ddae1.jpg)
+# 系统重装完成
+系统重装完成。
+![5 29](https://s1.imagehub.cc/images/2025/04/28/a5267ee3c3ad9f452a4b5a24adc655fe.jpg)
+
+:::tip
+不要忘了下载驱动哦 ~
+:::

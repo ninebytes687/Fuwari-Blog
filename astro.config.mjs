@@ -26,7 +26,7 @@ import { pluginCustomCopyButton } from "./src/plugins/expressive-code/custom-cop
 
 // https://astro.build/config
 export default defineConfig({
-	site: "https://fuwari.vercel.app/",
+	site: "https://blog.ninebytes.cc.cd/",
 	base: "/",
 	trailingSlash: "always",
 	integrations: [
@@ -53,6 +53,8 @@ export default defineConfig({
 				"fa6-brands": ["*"],
 				"fa6-regular": ["*"],
 				"fa6-solid": ["*"],
+				"simple-icons": ["*"],
+				"lucide": ["*"],
 			},
 		}),
 		expressiveCode({

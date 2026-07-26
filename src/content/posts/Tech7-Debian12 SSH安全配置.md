@@ -1,0 +1,114 @@
+---
+title: Debian12 SSH安全配置
+published: 2025-03-17
+updated: 2025-03-17
+description: "让我的SSH旋转"
+image: "/covers/Debian.png"
+tags: [Debian Linux, SSH]
+category: 'Tech'
+draft: false
+---
+
+# 修改SSH端口号
+在Linux中，默认的SSH端口号为22，由于这是人尽皆知的，容易被入侵者扫描。  
+通过修改SSH的配置文件实现修改端口号：`sudo vim /etc/ssh/sshd_config`  
+端口号定义范围最大不能超过65535；也不要占用常用的端口；例如20、21等。也可以自己自定义一个高位端口号。  
+使用`sudo systemctl restart sshd && systemctl status sshd`命令重启ssh服务并查看状态。 
+```shell
+ninebytes@ninebytes:~$ sudo systemctl restart sshd && systemctl status sshd
+● ssh.service - OpenBSD Secure Shell server
+     Loaded: loaded (/lib/systemd/system/ssh.service; enabled; preset: enabled)
+     Active: active (running) since Sat 2025-03-17 00:07:58 CST; 39ms ago
+       Docs: man:sshd(8)
+             man:sshd_config(5)
+    Process: 1521 ExecStartPre=/usr/sbin/sshd -t (code=exited, status=0/SUCCESS)
+   Main PID: 1522 (sshd)
+      Tasks: 1 (limit: 4611)
+     Memory: 1.4M
+        CPU: 116ms
+     CGroup: /system.slice/ssh.service
+             └─1522 "sshd: /usr/sbin/sshd -D [listener] 0 of 10-100 startups"
+```
+或者使用：`sudo ss -tulnp | grep sshd`查看端口占用情况。  
+```shell
+ninebytes@ninebytes:~$ sudo ss -tulnp | grep sshd
+tcp   LISTEN 0      128          0.0.0.0:52221      0.0.0.0:*    users:(("sshd",pid=3375,fd=3))
+tcp   LISTEN 0      128             [::]:52221         [::]:*    users:(("sshd",pid=3375,fd=4))
+```
+有时候旧的SSH进程并没有正确退出，导致22端口依旧被占用，仍然能使用22端口进行SSH连接。  
+使用`sudo killall sshd && sudo systemctl start ssh`终止所有的ssh进程， 并重新启动ssh进程。  
+若提示"killall command not found"，则没有安装psmisc软件包，killall命令属于psmisc软件包。  
+使用`sudo apt update && sudo apt install psmisc`安装psmisc软件包。  
+再次尝试使用22端口进行SSH连接，则连接超时。  
+
+# 禁止Root用户SSH登录
+禁止Root用户SSH登录可以直接防御暴力破解。Root用户是Linux系统的默认超级用户，攻击者会优先尝试此账户。  
+通过修改SSH的配置文件实现禁止Root用户登录：`sudo vim /etc/ssh/sshd_config`。  
+Debian12默认将root用户登录方式设置为了秘钥认证，将`PermitRootLogin prohibit-password`修改为`PermitRootLogin no`。  
+最后重启ssh服务`sudo systemctl restart sshd`即可。  
+
+# 设置SSH最大连接数
+通过修改SSH的配置文件实现设置SSH最大连接数：`sudo vim /etc/ssh/sshd_config`  
+找到`MaxSessions`并取消注释，更改MaxSessions到一个你认为比较合适的数值即可。  
+最后重启ssh服务`sudo systemctl restart sshd`。  
+
+# 设置SSH最大认证尝试次数
+通过修改SSH的配置文件实现设置SSH最大连接数：`sudo vim /etc/ssh/sshd_config`  
+找到`MaxAuthTries`并取消注释，更改MaxAuthTries到一个你认为比较合适的数值即可。  
+最后重启ssh服务`sudo systemctl restart sshd`。  
+
+# 设置SSH连接超时时间
+通过修改SSH的配置文件实现设置SSH连接超时时间：`sudo vim /etc/ssh/sshd_config`。  
+**ClientAliveInterval：**  
+SSH服务器会每隔N秒向SSH客户端发送一个空心跳包，用于检测客户端是否仍在线。  
+**ClientAliveCountMax：**  
+SSH服务器在连续N次未收到SSH客户端对心跳包的响应后，会主动断开SSH连接。  
+**举例：**  
+
+```shell
+# SSH服务器每隔60秒向SSH客户端发送一个空心跳包；
+ClientAliveInterval 60
+# SSH服务器连续3次未收到SSH客户端对心跳包的响应后，会主动断开SSH连接;
+ClientAliveCountMax 3
+
+# 总超时时间即为60*3=180秒=3分钟;
+```
+最后重启ssh服务`sudo systemctl restart sshd`。  
+
+# 创建普通用户并赋予sudo权限
+创建一个用户`testuser`并赋予sudo权限：`sudo adduser testuser`。  
+**将testuser用户加入sudo用户组：**  
+使用命令`sudo usermod -aG sudo testuser`。  
+**验证sudo权限：**  
+使用命令：`sudo -l -U testuser`验证testuser用户是否被赋予sudo权限，在输出命令中可以看到是否可以以sudo权限运行所有命令：(ALL : ALL) ALL。  
+```shell
+ninebytes@ninebytes:~$ sudo -l -U testuser
+Matching Defaults entries for testuser on ninebytes:
+    env_reset, mail_badpass, secure_path=/usr/local/sbin\:/usr/local/bin\:/usr/sbin\:/usr/bin\:/sbin\:/bin, use_pty
+
+User testuser may run the following commands on ninebytes:
+    (ALL : ALL) ALL
+```
+或者使用命令：`groups testuser`查看testuser用户的所属用户组。  
+```shell
+ninebytes@ninebytes:~$ groups testuser
+testuser : testuser sudo users
+```
+
+# 删除不需要的sudo权限用户
+使用命令：`sudo deluser --remove-home testuser`删除testuser用户及其主目录。  
+```shell
+ninebytes@ninebytes:~$ sudo deluser --remove-home testuser
+perl: warning: Setting locale failed.
+perl: warning: Please check that your locale settings:
+        LANGUAGE = "en_US:en",
+        LC_ALL = (unset),
+        LANG = "en_US.UTF-8"
+    are supported and installed on your system.
+perl: warning: Falling back to the standard locale ("C").
+Looking for files to backup/remove ...
+Removing files ...
+Removing crontab ...
+Removing user `testuser' ...
+Done.
+```

@@ -1,0 +1,114 @@
+---
+title: Windows DeepSeek本地部署
+published: 2025-02-01
+updated: 2025-02-01
+description: "将DeepSeek部署在本地，保护数据隐私"
+image: "/covers/DeepSeek.png"
+tags: [DeepSeek ,Windows]
+category: 'Tech'
+draft: false
+---
+
+# 前言
+为什么要本地部署？
+- 数据仅在本地处理，不会上传云端。
+- 不受某些神秘的限制。
+- 更快地响应输出。
+- 不依赖互联网连接，可以无网络使用。
+- 可以根据具体需求对模型进行微调和优化，以适应特定的应用场景。
+- 可以快速响应和解决技术问题，减少对外部支持的依赖。
+
+:::warning
+即使是本地部署也不可以搞瑟瑟哦
+:::
+
+# Ollama安装
+**什么是Ollama？**  
+Ollama 是一个用于在本地运行大型语言模型（LLMs）的工具。它允许用户在个人计算机上部署和运行各种开源语言模型，如 LLaMA、Mistral 等。Ollama 提供了一个简单的命令行界面，使得用户能够轻松地下载、管理和与这些模型进行交互。  
+首先打开[Ollma官网](https://ollama.com/)，下载跟你系统对应的Ollma版本。
+![6 1](https://s1.imagehub.cc/images/2025/04/28/4b143af2a4fa05c042451955bb40f569.png)
+下载好后点击`Install`安装即可。  
+下载慢的话可以点击[这里](https://pan.huang1111.cn/s/k24KWuB)使用我的huang1111网盘进行下载。
+![6 2](https://s1.imagehub.cc/images/2025/04/28/72f44861722d171ad5feeab95307980f.png)
+打开命令提示符或PowerShell均可，输入`ollama`，如果出现我这样的信息，就证明Ollama成功安装了。
+![6 3](https://s1.imagehub.cc/images/2025/04/28/ef6acb99412476ea3cc810ab527c5aa1.png)
+
+# 寻找合适版本
+再次打开[Ollma官网](https://ollama.com/)，在搜索框内输入`deepseek`，点击`deepseek-r1`。
+![6 4](https://s1.imagehub.cc/images/2025/04/28/2280bbc73050ad6aa36e900e36d57aa0.png)
+这里提供了多个蒸馏过的R1模型，根据自己电脑配置进行选择。  
+- Tips：1.5b核显也可以运行
+
+![6 5](https://s1.imagehub.cc/images/2025/04/28/12e54d06043fe3199fb54d679f4687cb.png)
+下面是各个版本的运行命令：  
+1.5b：  
+```txt
+ollama run deepseek-r1:1.5b
+```
+7b：
+```txt
+ollama run deepseek-r1:7b
+```
+8b：
+```txt
+ollama run deepseek-r1:8b
+```
+14b：
+```txt
+ollama run deepseek-r1:14b
+```
+32b：
+```txt
+ollama run deepseek-r1:32b
+```
+70b：
+```txt
+ollama run deepseek-r1:70b
+```
+671b：
+```txt
+ollama run deepseek-r1:671b
+```
+我的显卡是4060L，有8GB的显存，运行8b模型即可。  
+将命令复制后，打开命令提示符或PowerShell，然后将命令粘贴进去然后回车即可。耐心等待下载完成。
+![6 6](https://s1.imagehub.cc/images/2025/04/28/d45ffb01ece150f7e7d6265714dd7be2.png)
+
+# 运行DeepSeek
+下载完成后，命令行内输入`ollama list`查看已经下载好的模型。  
+使用`ollama run model_name`运行对应的模型。
+![6 7](https://s1.imagehub.cc/images/2025/04/28/0505dc71695d9448f2612030a5624030.png)
+
+# 安装ChatBox
+访问[ChatBox官网](https://chatboxai.app/)，点击`免费下载（for Windows）`下载ChatBox，然后安装。  
+下载慢的话可以点击[这里](https://pan.huang1111.cn/s/K9ODKhY)使用我的huang1111网盘进行下载。
+![6 11](https://s1.imagehub.cc/images/2025/04/28/f180ee7d4c2633bf52426cfbead7160b.png)
+安装完成后打开ChatBox，第1次打开会让你选择并配置AI模型提供方。点击`使用我自己的API KEY或本地模型`。
+![6 12](https://s1.imagehub.cc/images/2025/04/28/6ada809adbd3d9801c5c4e34f20695ad.png)
+
+# 配置ChatBox
+点击`Ollama API`。
+![6 13](https://s1.imagehub.cc/images/2025/04/28/c1f47c98104330a4241361c335a583f9.png)
+选择本地DeepSeek模型。
+![6 14](https://s1.imagehub.cc/images/2025/04/28/b69b8258e10a0cc6ce534ab752518a63.png)
+点击保存。
+![6 15](https://s1.imagehub.cc/images/2025/04/28/f7db55b0c71a10ea270f64239dd932c7.png)
+即可开始使用图形化界面。
+![6 16](https://s1.imagehub.cc/images/2025/04/28/cf8b483330146307d80dab0abc09e737.png)
+<Success>恭喜你部署成功啦！</Success>
+
+# 使用Web UI
+**由于需要Magic环境，我并没有Magic，所以没有配图，只有文本。**  
+1. 使用Google Chrome安装[Page Assist](https://chromewebstore.google.com/detail/page-assist-%E6%9C%AC%E5%9C%B0-ai-%E6%A8%A1%E5%9E%8B%E7%9A%84-web/jfgfiigpkhlkbnfnbobbkinehhfdhndo)插件后，启动Ollama服务。  
+2. 在Google Chrome内使用快捷键<Kbd>Ctrl</Kbd> + <Kbd>Shift</Kbd> + <Kbd>L</Kbd>即可呼出Page Assist页面。
+3. 首次打开需要简单配置一下：在右上角设置-RAG Setting中选择为你下载的DeepSeek模型，然后回到对话窗口，即可在WebUI中玩耍了。
+
+# 卸载模型
+使用命令`ollama rm model_name`来卸载模型。
+![6 10](https://s1.imagehub.cc/images/2025/04/28/6ee23cb49807af2ff0d89a3a966a4018.png)
+# 最后
+运行8b模型前后时的显存占用图。
+<Diff r="https://s1.imagehub.cc/images/2025/04/28/c300b94c70ae901c1e97600747e8a65c.png" l="https://s1.imagehub.cc/images/2025/04/28/1062bd0d805501a72dd53dfc264a84aa.png"></Diff>
+运行14b模型前后时的显存占用图。
+<Diff r="https://s1.imagehub.cc/images/2025/04/28/c300b94c70ae901c1e97600747e8a65c.png" l="https://s1.imagehub.cc/images/2025/04/28/802f847e374f937caac27e7cba514625.png"></Diff>
+
+- Tips：如果下载到最后特别慢的话，可以<Kbd>Ctrl</Kbd> + <Kbd>C</Kbd>停止后，再次执行该运行命令。

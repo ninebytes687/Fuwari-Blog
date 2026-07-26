@@ -1,25 +1,298 @@
 ---
 
-import { getEntry, render } from "astro:content";
-import Markdown from "@components/misc/Markdown.astro";
+import { Icon } from "astro-icon/components";
 import I18nKey from "../i18n/i18nKey";
 import { i18n } from "../i18n/translation";
 import MainGridLayout from "../layouts/MainGridLayout.astro";
-
-const aboutPost = await getEntry("spec", "about");
-
-if (!aboutPost) {
-	throw new Error("About page content not found");
-}
-
-const { Content } = await render(aboutPost);
 ---
 <MainGridLayout title={i18n(I18nKey.about)} description={i18n(I18nKey.about)}>
     <div class="flex w-full rounded-[var(--radius-large)] overflow-hidden relative min-h-32">
-        <div class="card-base z-10 px-9 py-6 relative w-full ">
-            <Markdown class="mt-2">
-                <Content />
-            </Markdown>
+        <div class="card-base z-10 px-9 py-6 relative w-full">
+
+            <h1 class="text-4xl font-bold mb-10 text-neutral-900 dark:text-neutral-100 transition">
+                {i18n(I18nKey.about)}
+            </h1>
+
+            <!-- ==================== Who am I? ==================== -->
+            <section class="mt-12">
+                <h2 class="text-2xl font-bold mb-6 flex items-center gap-2 text-neutral-900 dark:text-neutral-100 transition">
+                    <Icon name="fa6-solid:user" class="text-[var(--primary)]" />
+                    <span>Who am i ?</span>
+                </h2>
+                <p class="text-neutral-800 dark:text-neutral-200 transition leading-relaxed">
+                    普普通通三线城市的 00 后，这里主要记录了我的一些技术
+                    <span class="line-through text-neutral-500 dark:text-neutral-400">没什么技术含量</span>
+                    、生活、学习等方面的文章。
+                </p>
+                <br />
+                <p class="text-neutral-800 dark:text-neutral-200 transition leading-relaxed">
+                    博客项目使用的是
+                    <b>
+                        <a href="https://astro.build/" target="_blank" rel="noopener noreferrer"
+                           class="underline decoration-yellow-400 decoration-2 underline-offset-4 text-neutral-900 dark:text-neutral-100 hover:text-[var(--primary)] transition">Astro</a>
+                    </b>
+                    架构，使用
+                    <b>
+                        <a href="https://github.com/saicaca/fuwari" target="_blank" rel="noopener noreferrer"
+                           class="underline decoration-yellow-400 decoration-2 underline-offset-4 text-neutral-900 dark:text-neutral-100 hover:text-[var(--primary)] transition">Fuwari</a>
+                    </b>
+                    主题，托管在 GitHub，使用Vercel构建。
+                </p>
+            </section>
+            <!-- ==================== Who am I? End ==================== -->
+            <!-- ==================== Website Timeline ==================== -->
+            <section class="space-y-6 mt-16">
+                <h2 class="text-2xl font-bold mb-6 flex items-center gap-2 text-neutral-900 dark:text-neutral-100 transition">
+                    <Icon name="fa6-solid:clock-rotate-left" class="text-[var(--primary)]" />
+                    <span>Website Timeline</span>
+                </h2>
+
+                <!-- 2026-07-25 换主题 -->
+                <div class="flex gap-4">
+                    <div class="flex flex-col items-center">
+                        <div class="p-3 rounded-full text-white transition" style="background:#84ccd3">
+                            <Icon name="fa6-solid:palette" class="w-6 h-6" />
+                        </div>
+                        <div class="w-px h-full mt-2 bg-black/10 dark:bg-white/15 transition"></div>
+                    </div>
+                    <div class="pb-4">
+                        <h3 class="text-xl font-bold text-neutral-900 dark:text-neutral-100 transition">2026年7月25日</h3>
+                        <p class="mt-1 text-neutral-800 dark:text-neutral-200 transition">博客由 Frosti 主题更换 Fuwari 主题</p>
+                        <p class="text-sm mt-1 text-neutral-500 dark:text-neutral-400 transition">更加美观、简洁</p>
+                    </div>
+                </div>
+
+                <!-- 2026-07-20 换域名 -->
+                <div class="flex gap-4">
+                    <div class="flex flex-col items-center">
+                        <div class="p-3 rounded-full text-white transition" style="background:#84ccd3">
+                            <Icon name="fa6-solid:compass" class="w-6 h-6" />
+                        </div>
+                        <div class="w-px h-full mt-2 bg-black/10 dark:bg-white/15 transition"></div>
+                    </div>
+                    <div class="pb-4">
+                        <h3 class="text-xl font-bold text-neutral-900 dark:text-neutral-100 transition">2026年7月20日</h3>
+                        <p class="mt-1 text-neutral-800 dark:text-neutral-200 transition">博客更换 .cc.cd 域名</p>
+                        <p class="text-sm mt-1 text-neutral-500 dark:text-neutral-400 transition">我的钱包怎么扁扁的？</p>
+                    </div>
+                </div>
+
+                <!-- 2025-08-03 -->
+                <div class="flex gap-4">
+                    <div class="flex flex-col items-center">
+                        <div class="p-3 rounded-full text-white transition" style="background:#84ccd3">
+                            <Icon name="fa6-solid:chart-line" class="w-6 h-6" />
+                        </div>
+                        <div class="w-px h-full mt-2 bg-black/10 dark:bg-white/15 transition"></div>
+                    </div>
+                    <div class="pb-4">
+                        <h3 class="text-xl font-bold text-neutral-900 dark:text-neutral-100 transition">2025年8月3日</h3>
+                        <p class="mt-1 text-neutral-800 dark:text-neutral-200 transition">博客接入 Umami Cloud 统计</p>
+                        <p class="text-sm mt-1 text-neutral-500 dark:text-neutral-400 transition">高效、易读、可视化站点统计</p>
+                    </div>
+                </div>
+
+                <!-- 2025-05-26 -->
+                <div class="flex gap-4">
+                    <div class="flex flex-col items-center">
+                        <div class="p-3 rounded-full text-white transition" style="background:#84ccd3">
+                            <Icon name="fa6-solid:calendar-days" class="w-6 h-6" />
+                        </div>
+                        <div class="w-px h-full mt-2 bg-black/10 dark:bg-white/15 transition"></div>
+                    </div>
+                    <div class="pb-4">
+                        <h3 class="text-xl font-bold text-neutral-900 dark:text-neutral-100 transition">2025年5月26日</h3>
+                        <p class="mt-1 text-neutral-800 dark:text-neutral-200 transition">About 页面增加 Website Timeline</p>
+                        <p class="text-sm mt-1 text-neutral-500 dark:text-neutral-400 transition">可视化呈现技术栈迭代与关键里程碑</p>
+                    </div>
+                </div>
+
+                <!-- 2025-05-08 -->
+                <div class="flex gap-4">
+                    <div class="flex flex-col items-center">
+                        <div class="p-3 rounded-full text-white transition" style="background:#84ccd3">
+                            <Icon name="simple-icons:cloudflare" class="w-6 h-6" />
+                        </div>
+                        <div class="w-px h-full mt-2 bg-black/10 dark:bg-white/15 transition"></div>
+                    </div>
+                    <div class="pb-4">
+                        <h3 class="text-xl font-bold text-neutral-900 dark:text-neutral-100 transition">2025年5月8日</h3>
+                        <p class="mt-1 text-neutral-800 dark:text-neutral-200 transition">CNAME CloudFlare Pages</p>
+                        <p class="text-sm mt-1 text-neutral-500 dark:text-neutral-400 transition">优化全球访问速度，适应国内网络环境</p>
+                    </div>
+                </div>
+
+                <!-- 2024-12-31 -->
+                <div class="flex gap-4">
+                    <div class="flex flex-col items-center">
+                        <div class="p-3 rounded-full text-white transition" style="background:#84ccd3">
+                            <Icon name="simple-icons:astro" class="w-6 h-6" />
+                        </div>
+                        <div class="w-px h-full mt-2 bg-black/10 dark:bg-white/15 transition"></div>
+                    </div>
+                    <div class="pb-4">
+                        <h3 class="text-xl font-bold text-neutral-900 dark:text-neutral-100 transition">2024年12月31日</h3>
+                        <p class="mt-1 text-neutral-800 dark:text-neutral-200 transition">重构为 Astro 静态站点</p>
+                        <p class="text-sm mt-1 text-neutral-500 dark:text-neutral-400 transition">采用 Frosti 主题，显著提升性能表现</p>
+                    </div>
+                </div>
+
+                <!-- 2024-10-11 -->
+                <div class="flex gap-4">
+                    <div class="flex flex-col items-center">
+                        <div class="p-3 rounded-full text-white transition" style="background:#84ccd3">
+                            <Icon name="fa6-solid:rocket" class="w-6 h-6" />
+                        </div>
+                        <div class="w-px h-full mt-2 bg-black/10 dark:bg-white/15 transition"></div>
+                    </div>
+                    <div class="pb-4">
+                        <h3 class="text-xl font-bold text-neutral-900 dark:text-neutral-100 transition">2024年10月11日</h3>
+                        <p class="mt-1 text-neutral-800 dark:text-neutral-200 transition">使用更为轻便的 TypeCho Cuckoo 主题</p>
+                        <p class="text-sm mt-1 text-neutral-500 dark:text-neutral-400 transition">轻量化设计带来显著性能提升</p>
+                    </div>
+                </div>
+
+                <!-- 2024-09-02 -->
+                <div class="flex gap-4">
+                    <div class="flex flex-col items-center">
+                        <div class="p-3 rounded-full text-white transition" style="background:#84ccd3">
+                            <Icon name="fa6-solid:window-maximize" class="w-6 h-6" />
+                        </div>
+                        <div class="w-px h-full mt-2 bg-black/10 dark:bg-white/15 transition"></div>
+                    </div>
+                    <div class="pb-4">
+                        <h3 class="text-xl font-bold text-neutral-900 dark:text-neutral-100 transition">2024年9月2日</h3>
+                        <p class="mt-1 text-neutral-800 dark:text-neutral-200 transition">使用 WordPress Argon 主题</p>
+                        <p class="text-sm mt-1 text-neutral-500 dark:text-neutral-400 transition">美观但系统消耗资源较大</p>
+                    </div>
+                </div>
+
+                <!-- 2024-07-31 -->
+                <div class="flex gap-4">
+                    <div class="flex flex-col items-center">
+                        <div class="p-3 rounded-full text-white transition" style="background:#84ccd3">
+                            <Icon name="fa6-solid:link" class="w-6 h-6" />
+                        </div>
+                        <div class="w-px h-full mt-2 bg-black/10 dark:bg-white/15 transition"></div>
+                    </div>
+                    <div class="pb-4">
+                        <h3 class="text-xl font-bold text-neutral-900 dark:text-neutral-100 transition">2024年7月31日</h3>
+                        <p class="mt-1 text-neutral-800 dark:text-neutral-200 transition">在 Namesilo 注册 .top 域名</p>
+                        <p class="text-sm mt-1 text-neutral-500 dark:text-neutral-400 transition">花费 $1.88 巨款</p>
+                    </div>
+                </div>
+
+                <!-- 2024-07-16 -->
+                <div class="flex gap-4">
+                    <div class="flex flex-col items-center">
+                        <div class="p-3 rounded-full text-white transition" style="background:#84ccd3">
+                            <Icon name="fa6-solid:shield-halved" class="w-6 h-6" />
+                        </div>
+                        <div class="w-px h-full mt-2 bg-black/10 dark:bg-white/15 transition"></div>
+                    </div>
+                    <div class="pb-4">
+                        <h3 class="text-xl font-bold text-neutral-900 dark:text-neutral-100 transition">2024年7月16日</h3>
+                        <p class="mt-1 text-neutral-800 dark:text-neutral-200 transition">实现全站 HTTPS 加密</p>
+                        <p class="text-sm mt-1 text-neutral-500 dark:text-neutral-400 transition">提升数据安全性</p>
+                    </div>
+                </div>
+
+                <!-- 2024-07-15 -->
+                <div class="flex gap-4">
+                    <div class="flex flex-col items-center">
+                        <div class="p-3 rounded-full text-white transition" style="background:#84ccd3">
+                            <Icon name="fa6-solid:link" class="w-6 h-6" />
+                        </div>
+                        <div class="w-px h-full mt-2 bg-black/10 dark:bg-white/15 transition"></div>
+                    </div>
+                    <div class="pb-4">
+                        <h3 class="text-xl font-bold text-neutral-900 dark:text-neutral-100 transition">2024年7月15日</h3>
+                        <p class="mt-1 text-neutral-800 dark:text-neutral-200 transition">注册 .us.kg 域名</p>
+                        <p class="text-sm mt-1 text-neutral-500 dark:text-neutral-400 transition">免费，但容易被 GFW</p>
+                    </div>
+                </div>
+
+                <!-- 2024-07-14 最后一项 -->
+                <div class="flex gap-4">
+                    <div class="flex flex-col items-center">
+                        <div class="p-3 rounded-full text-white transition" style="background:#84ccd3">
+                            <Icon name="fa6-solid:globe" class="w-6 h-6" />
+                        </div>
+                    </div>
+                    <div>
+                        <h3 class="text-xl font-bold text-neutral-900 dark:text-neutral-100 transition">2024年7月14日</h3>
+                        <p class="mt-1 text-neutral-800 dark:text-neutral-200 transition">突然萌生搭建一个属于自己博客的想法</p>
+                        <p class="text-sm mt-1 text-neutral-500 dark:text-neutral-400 transition">开始寻找现有博客框架</p>
+                    </div>
+                </div>
+            </section>
+            <!-- ==================== Website Timeline End ==================== -->
+
+            <!-- ==================== Others ==================== -->
+            <section class="space-y-4 mt-16">
+                <h2 class="text-2xl font-bold mb-6 flex items-center gap-2 text-neutral-900 dark:text-neutral-100 transition">
+                    <Icon name="fa6-solid:circle-info" class="text-[var(--primary)]" />
+                    <span>Others</span>
+                </h2>
+
+                <!-- 版权声明 -->
+                <h3 class="text-lg font-semibold text-neutral-900 dark:text-neutral-100 transition">版权声明</h3>
+                <p class="text-neutral-800 dark:text-neutral-200 transition leading-relaxed">
+                    本博客所有原创内容（包括文章、图片、代码等）版权归
+                    <a href="https://blog.ninebytes.top/" target="_blank" rel="noopener noreferrer"
+                       class="text-[var(--primary)] font-semibold hover:underline transition">NineBytes</a>
+                    所有，采用
+                    <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank" rel="noopener noreferrer"
+                       class="text-[var(--primary)] hover:underline transition">CC BY-NC-SA 4.0</a>
+                    许可协议。转载文章请注明文章出处。
+                </p>
+
+                <!-- 侵权声明 -->
+                <h3 class="text-lg font-semibold mt-6 text-neutral-900 dark:text-neutral-100 transition">侵权声明</h3>
+                <p class="text-neutral-800 dark:text-neutral-200 transition leading-relaxed">
+                    本站部分内容可能来源于网络，仅供学习交流。如无意中侵犯了您的权益，请通过以下方式联系删除：<br />
+                    邮箱 📧：<a href="mailto:ninebytes@ninebytes.top"
+                                class="text-[var(--primary)] hover:underline transition">ninebytes@ninebytes.top</a><br />
+                    <span class="text-neutral-500 dark:text-neutral-400">（请提供具体链接及权属证明，我们将在核实后 48 小时内处理。）</span>
+                </p>
+
+                <!-- 隐私声明 -->
+                <h3 class="text-lg font-semibold mt-6 text-neutral-900 dark:text-neutral-100 transition">隐私声明</h3>
+                <p class="text-neutral-800 dark:text-neutral-200 transition leading-relaxed">
+                    本站使用 Umami 进行统计，仅收集匿名数据（如国家与浏览量），不会关联个人身份与精确 IP。请您放心浏览，希望您能在这里发现有价值的内容，享受阅读的乐趣。
+                </p>
+
+                <!-- 英文分隔 -->
+                <div class="my-8 border-t border-dashed border-black/10 dark:border-white/15"></div>
+
+                <!-- Copyright Notice (EN) -->
+                <h3 class="text-lg font-semibold text-neutral-900 dark:text-neutral-100 transition">Copyright Notice</h3>
+                <p class="text-neutral-800 dark:text-neutral-200 transition leading-relaxed">
+                    All original content on this blog (including articles, images, code, etc.) is copyrighted by
+                    <a href="https://blog.ninebytes.top/" target="_blank" rel="noopener noreferrer"
+                       class="text-[var(--primary)] font-semibold hover:underline transition">NineBytes</a>
+                    and licensed under
+                    <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank" rel="noopener noreferrer"
+                       class="text-[var(--primary)] hover:underline transition">CC BY-NC-SA 4.0</a>.
+                    Please indicate the source when reposting.
+                </p>
+
+                <!-- Infringement Notice (EN) -->
+                <h3 class="text-lg font-semibold mt-6 text-neutral-900 dark:text-neutral-100 transition">Infringement Notice</h3>
+                <p class="text-neutral-800 dark:text-neutral-200 transition leading-relaxed">
+                    Some content may originate from the internet for educational purposes only. If you believe your rights have been inadvertently infringed, please contact us for removal：<br />
+                    Email 📧：<a href="mailto:ninebytes@ninebytes.top"
+                                  class="text-[var(--primary)] hover:underline transition">ninebytes@ninebytes.top</a><br />
+                    <span class="text-neutral-500 dark:text-neutral-400">(Please provide specific URLs and proof of ownership. We will process your request within 48 hours after verification.)</span>
+                </p>
+
+                <!-- Privacy Notice (EN) -->
+                <h3 class="text-lg font-semibold mt-6 text-neutral-900 dark:text-neutral-100 transition">Privacy Notice</h3>
+                <p class="text-neutral-800 dark:text-neutral-200 transition leading-relaxed">
+                    This website uses Umami for analytics, collecting only anonymous data such as country and page views. It does not link any information to individual identities or exact IP addresses. Feel free to browse with peace of mind. We hope you discover valuable content here and enjoy your reading experience.
+                </p>
+            </section>
+            <!-- ==================== Others End ==================== -->
         </div>
     </div>
 </MainGridLayout>
