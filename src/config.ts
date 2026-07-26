@@ -17,7 +17,7 @@ export const siteConfig: SiteConfig = {
 	},
 	banner: {
 		enable: false,
-		src: "assets/images/demo-banner.png", // 相对于 /src 目录；如果以 '/' 开头则相对于 /public 目录
+		src: "/banner.png", // 相对于 /src 目录；如果以 '/' 开头则相对于 /public 目录
 		position: "center", // 等同于 object-position，仅支持 'top'、'center'、'bottom'，默认为 'center'
 		credit: {
 			enable: false, // 是否显示横幅图片的版权信息
@@ -31,11 +31,11 @@ export const siteConfig: SiteConfig = {
 	},
 	favicon: [
 		// 留空以使用默认网站图标
-		// {
-		//   src: '/favicon/icon.png',    // 网站图标的路径，相对于 /public 目录
+		 {
+		   src: '/icon.ico',    // 网站图标的路径，相对于 /public 目录
 		//   theme: 'light',              // （可选）仅当你有亮色/暗色模式不同的图标时才设置，可选 'light' 或 'dark'
 		//   sizes: '32x32',              // （可选）仅当你有不同尺寸的图标时才设置
-		// }
+		 }
 	],
 };
 
@@ -62,7 +62,7 @@ export const navBarConfig: NavBarConfig = {
 };
 
 export const profileConfig: ProfileConfig = {
-	avatar: "assets/images/demo-avatar.png", // 相对于 /src 目录；如果以 '/' 开头则相对于 /public 目录
+	avatar: "/profile.png", // 相对于 /src 目录；如果以 '/' 开头则相对于 /public 目录
 	name: "NineBytes",
 	bio: "偏我来时不逢春",
 	links: [
