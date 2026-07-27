@@ -9,12 +9,12 @@ const minutes = Math.floor((timeDifference % (1000 * 60 * 60)) / (1000 * 60));
 const seconds = Math.floor((timeDifference % (1000 * 60)) / 1000);
 ---
 
-<div id="countdown">
-    博客已运行: {days} 天 {hours} 小时 {minutes} 分钟 {seconds} 秒
+<div class="js-countdown">
+  博客已运行: {days} 天 {hours} 小时 {minutes} 分钟 {seconds} 秒
 </div>
 
 <style>
-  #countdown {
+  .js-countdown {
     font-size: 14px;
     text-align: center;
     margin: 0;
@@ -23,22 +23,38 @@ const seconds = Math.floor((timeDifference % (1000 * 60)) / 1000);
 </style>
 
 <script is:inline>
-  function updateCountdown() {
-    const targetDate = new Date('2024-07-14T00:00:00');
-    const now = new Date();
-    const timeDifference = Math.abs(targetDate - now);
+  (function () {
+    const targetTime = new Date('2024-07-14T00:00:00').getTime();
+    let timerId = null;
 
-    const days = Math.floor(timeDifference / (1000 * 60 * 60 * 24));
-    const hours = Math.floor((timeDifference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-    const minutes = Math.floor((timeDifference % (1000 * 60 * 60)) / (1000 * 60));
-    const seconds = Math.floor((timeDifference % (1000 * 60)) / 1000);
+    function render() {
+      const now = Date.now();
+      const diff = Math.abs(now - targetTime);
 
-    document.getElementById('countdown').innerText = `博客已运行: ${days} 天 ${hours} 小时 ${minutes} 分钟 ${seconds} 秒`;
-  }
+      const days = Math.floor(diff / 86400000);
+      const hours = Math.floor((diff % 86400000) / 3600000);
+      const minutes = Math.floor((diff % 3600000) / 60000);
+      const seconds = Math.floor((diff % 60000) / 1000);
 
-  // 立即执行一次
-  updateCountdown();
+      const text = `博客已运行: ${days} 天 ${hours} 小时 ${minutes} 分钟 ${seconds} 秒`;
 
-  // 每秒更新
-  setInterval(updateCountdown, 1000);
+      // 用 class 选择器，把页面上所有匹配的节点都更新一遍
+      // （不管是不是移动端/桌面端各存在一份，都能覆盖到）
+      document.querySelectorAll('.js-countdown').forEach((el) => {
+        el.textContent = text;
+      });
+    }
+
+    function start() {
+      if (timerId) clearInterval(timerId);
+      render();
+      timerId = setInterval(render, 1000);
+    }
+
+    start();
+    document.addEventListener('astro:page-load', start);
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') render();
+    });
+  })();
 </script>
