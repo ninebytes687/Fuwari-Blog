@@ -8,9 +8,9 @@ export interface FriendLink {
 export const friendLinks: FriendLink[] = [
 	// ====== 在这里添加你的友链 ======
 	{
-		name: "示例博客一",
-		url: "https://example.com",
-		avatar: "https://api.dicebear.com/7.x/notionists/svg?seed=Felix",
-		description: "这是第一个示例博客的描述",
+		name: "芹香のblog",
+		url: "https://blog.serikawa.top",
+		avatar: "https://imgs.977958.xyz/uploads//684dac2732bba_.jpg",
+		description: "芹香のblog，一个游戏站点兼信息技术交流小站，欢迎来玩♡",
 	},
 ];

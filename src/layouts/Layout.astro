@@ -192,6 +192,55 @@ const bannerOffset =
 		@apply opacity-0 -translate-y-16
 	}
 }
+
+/* 点击复制提示（原 friends.astro 中的 tooltip 样式，挪到全局，保证任意导航方式下都能加载到） */
+.copy-link {
+	user-select: all;
+}
+.copy-tooltip {
+	position: fixed;
+	z-index: 9999;
+	pointer-events: none;
+	padding: 6px 12px;
+	background-color: rgba(17, 24, 39, 0.95);
+	color: #fff;
+	font-size: 13px;
+	border-radius: 8px;
+	white-space: nowrap;
+	opacity: 0;
+	transform: translate(-50%, -130%) scale(0.9);
+	transition: opacity 0.15s ease, transform 0.15s ease;
+	box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+}
+.copy-tooltip.show {
+	opacity: 1;
+	transform: translate(-50%, -130%) scale(1);
+}
+.copy-tooltip::after {
+	content: "";
+	position: absolute;
+	top: 100%;
+	left: 50%;
+	transform: translateX(-50%);
+	border: 5px solid transparent;
+	border-top-color: rgba(17, 24, 39, 0.95);
+}
+@media (prefers-color-scheme: dark) {
+	.copy-tooltip {
+		background-color: rgba(229, 231, 235, 0.95);
+		color: #111827;
+	}
+	.copy-tooltip::after {
+		border-top-color: rgba(229, 231, 235, 0.95);
+	}
+}
+html.dark .copy-tooltip {
+	background-color: rgba(229, 231, 235, 0.95);
+	color: #111827;
+}
+html.dark .copy-tooltip::after {
+	border-top-color: rgba(229, 231, 235, 0.95);
+}
 </style>
 
 <script>
@@ -363,12 +412,109 @@ function showBanner() {
 	banner.classList.remove('opacity-0', 'scale-105');
 }
 
+/*
+ * 点击复制的 tooltip（原来写在 friends.astro 页面自己的 <script> 里）。
+ * 挪到这里、用事件委托（document 级别监听 + closest('.copy-link') 判断）实现，
+ * 而不是在具体某个 .copy-link 元素上单独 addEventListener。
+ *
+ * 原因：friends.astro 属于 Swup 接管、会被整体替换内容的页面区域。它自己的 <script>
+ * 只有在整页硬刷新时才会被浏览器解析执行；通过 Swup 点击链接跳转过来时，新内容是用
+ * innerHTML 换进 DOM 的，其中的 <script> 标签根本不会执行。而这里（Layout.astro）的
+ * 脚本只在整个站点会话里执行一次、并且不会随 Swup 换页被销毁，因此只需要设置一次事件
+ * 委托，就能对当前页面里、以及以后任何一次 Swup 换页后出现的 .copy-link 元素都生效，
+ * 不需要每次导航后重新查询元素、重新绑定事件。
+ */
+function initCopyLinkTooltip() {
+	// 用一个独立的标记位判断"事件是否已经绑定过"，而不是用 tooltip 元素是否存在来判断——
+	// 避免出现 tooltip 元素因为某种原因不在了，就连带导致监听器也绑不上的情况。
+	if ((window as any).__copyLinkTooltipBound) return;
+	(window as any).__copyLinkTooltipBound = true;
+
+	function ensureTooltip(): HTMLElement {
+		let el = document.querySelector<HTMLElement>('.copy-tooltip');
+		if (!el) {
+			el = document.createElement('div');
+			el.className = 'copy-tooltip';
+			el.textContent = '点击复制 ~';
+			document.body.appendChild(el);
+		}
+		return el;
+	}
+
+	let hoveredEl: HTMLElement | null = null;
+
+	function moveTooltip(e: MouseEvent) {
+		const tooltip = ensureTooltip();
+		tooltip.style.left = e.clientX + 'px';
+		tooltip.style.top = e.clientY + 'px';
+	}
+
+	document.addEventListener('mouseover', (e) => {
+		const el = (e.target as HTMLElement)?.closest?.('.copy-link') as HTMLElement | null;
+		if (!el || el === hoveredEl) return;
+		hoveredEl = el;
+		const tooltip = ensureTooltip();
+		tooltip.textContent = '点击复制 ~';
+		tooltip.classList.add('show');
+		moveTooltip(e);
+	});
+
+	document.addEventListener('mousemove', (e) => {
+		if (hoveredEl) moveTooltip(e);
+	});
+
+	document.addEventListener('mouseout', (e) => {
+		if (!hoveredEl) return;
+		const related = e.relatedTarget as HTMLElement | null;
+		if (!related || !hoveredEl.contains(related)) {
+			hoveredEl = null;
+			ensureTooltip().classList.remove('show');
+		}
+	});
+
+	document.addEventListener('click', async (e) => {
+		const el = (e.target as HTMLElement)?.closest?.('.copy-link') as HTMLElement | null;
+		if (!el) return;
+		e.preventDefault();
+		e.stopPropagation();
+		const tooltip = ensureTooltip();
+		const text = el.dataset.copy || el.textContent || '';
+		try {
+			await navigator.clipboard.writeText(text);
+			tooltip.textContent = '✅ 已复制到剪贴板！';
+		} catch {
+			// 降级方案
+			const ta = document.createElement('textarea');
+			ta.value = text;
+			ta.style.position = 'fixed';
+			ta.style.opacity = '0';
+			document.body.appendChild(ta);
+			ta.select();
+			document.execCommand('copy');
+			document.body.removeChild(ta);
+			tooltip.textContent = '✅ 已复制到剪贴板！';
+		}
+		setTimeout(() => {
+			if (hoveredEl === el) {
+				tooltip.textContent = '点击复制 ~';
+			}
+		}, 2000);
+	});
+
+	console.log('[copy-link] tooltip 初始化完成，共找到', document.querySelectorAll('.copy-link').length, '个 .copy-link 元素');
+}
+
 function init() {
 	// disableAnimation()()		// TODO
 	loadTheme();
 	loadHue();
 	initCustomScrollbar();
 	showBanner();
+	try {
+		initCopyLinkTooltip();
+	} catch (err) {
+		console.error('[copy-link] 初始化失败：', err);
+	}
 }
 
 /* Load settings when entering the site */
@@ -565,4 +711,3 @@ if (window.swup) {
 	document.addEventListener("swup:enable", setup)
 }
 </script>
-
