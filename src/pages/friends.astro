@@ -95,17 +95,173 @@ import { friendLinks } from "../config/friends";
     </div>
 </MainGridLayout>
 
-<!--
-    点击复制的交互逻辑（tooltip 创建 + 事件绑定 + 相关样式）已经移动到 Layout.astro 的
-    全局常驻 <script>/<style> 里，用事件委托（event delegation）在 document 级别监听。
+<style>
+    .copy-link {
+        user-select: all;
+    }
 
-    原因：这个 <script> 之前写在 friends.astro 里，而 friends.astro 是被 Swup 接管、
-    可整体替换的页面内容区域。只有【整页硬刷新】时，浏览器原生解析 HTML 才会执行这里的
-    <script>；而通过站内链接点击的 Swup 软跳转，是把新页面内容用 innerHTML 的方式替换进
-    DOM 的——用这种方式插入的 <script> 标签根本不会被执行（这是浏览器的固有行为，与是不是
-    "第一次"无关）。这就是为什么"点链接跳转过来不生效，刷新一下就正常了"。
+    /* 关键：使用 :global() 包裹动态创建的元素样式，避免 Astro scoped 哈希不匹配 */
+    :global(.copy-tooltip) {
+        position: fixed;
+        z-index: 9999;
+        pointer-events: none;
+        padding: 6px 12px;
+        background-color: rgba(17, 24, 39, 0.95);
+        color: #fff;
+        font-size: 13px;
+        border-radius: 8px;
+        white-space: nowrap;
+        opacity: 0;
+        transform: translate(-50%, -130%) scale(0.9);
+        transition: opacity 0.15s ease, transform 0.15s ease;
+        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+    }
+    :global(.copy-tooltip.show) {
+        opacity: 1;
+        transform: translate(-50%, -130%) scale(1);
+    }
+    :global(.copy-tooltip::after) {
+        content: "";
+        position: absolute;
+        top: 100%;
+        left: 50%;
+        transform: translateX(-50%);
+        border: 5px solid transparent;
+        border-top-color: rgba(17, 24, 39, 0.95);
+    }
+    @media (prefers-color-scheme: dark) {
+        :global(.copy-tooltip) {
+            background-color: rgba(229, 231, 235, 0.95);
+            color: #111827;
+        }
+        :global(.copy-tooltip::after) {
+            border-top-color: rgba(229, 231, 235, 0.95);
+        }
+    }
+    html.dark :global(.copy-tooltip) {
+        background-color: rgba(229, 231, 235, 0.95);
+        color: #111827;
+    }
+    html.dark :global(.copy-tooltip::after) {
+        border-top-color: rgba(229, 231, 235, 0.95);
+    }
+</style>
 
-    挪到 Layout.astro 后，这段逻辑只需要在整个站点会话中执行一次（Layout 的脚本不会被
-    Swup 替换、会一直存活），配合事件委托，不管 .copy-link 元素是首次渲染出现的，还是
-    Swup 之后新换上来的 DOM 节点，都能正常响应，不需要每次导航后重新绑定。
--->
+<script>
+    function initCopyLinks() {
+        let tooltip = document.querySelector(".copy-tooltip") as HTMLElement;
+
+        // 防止重复创建
+        if (!tooltip) {
+            tooltip = document.createElement("div");
+            tooltip.className = "copy-tooltip";
+            tooltip.textContent = "点击复制 ~";
+            document.body.appendChild(tooltip);
+        }
+
+        let hoveredEl: HTMLElement | null = null;
+
+
+        function moveTooltip(e: MouseEvent) {
+            tooltip.style.left = e.clientX + "px";
+            tooltip.style.top = e.clientY + "px";
+        }
+
+
+        document.querySelectorAll<HTMLElement>(".copy-link").forEach((el) => {
+
+            // 防止重复绑定
+            if (el.dataset.copyInit) return;
+
+            el.dataset.copyInit = "true";
+
+
+            el.addEventListener("mouseenter", (e) => {
+                hoveredEl = el;
+
+                tooltip.textContent = "点击复制 ~";
+                tooltip.classList.add("show");
+
+                moveTooltip(e as MouseEvent);
+            });
+
+
+            el.addEventListener("mousemove", (e) => {
+                moveTooltip(e as MouseEvent);
+            });
+
+
+            el.addEventListener("mouseleave", () => {
+                hoveredEl = null;
+                tooltip.classList.remove("show");
+            });
+
+
+            el.addEventListener("click", async (e) => {
+
+                e.preventDefault();
+                e.stopPropagation();
+
+
+                const text =
+                    el.dataset.copy ||
+                    el.textContent ||
+                    "";
+
+
+                try {
+
+                    await navigator.clipboard.writeText(text);
+
+                } catch {
+
+                    const ta = document.createElement("textarea");
+
+                    ta.value = text;
+                    ta.style.position = "fixed";
+                    ta.style.opacity = "0";
+
+                    document.body.appendChild(ta);
+
+                    ta.select();
+
+                    document.execCommand("copy");
+
+                    document.body.removeChild(ta);
+
+                }
+
+
+                tooltip.textContent = "✅ 已复制到剪贴板！";
+
+
+                setTimeout(() => {
+
+                    if (hoveredEl === el) {
+                        tooltip.textContent = "点击复制 ~";
+                    }
+
+                }, 2000);
+
+            });
+
+
+        });
+
+    }
+
+
+    // 首次加载
+    document.addEventListener(
+        "DOMContentLoaded",
+        initCopyLinks
+    );
+
+
+    // Astro 页面切换
+    document.addEventListener(
+        "astro:page-load",
+        initCopyLinks
+    );
+
+</script>
