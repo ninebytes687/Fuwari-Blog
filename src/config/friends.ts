@@ -6,7 +6,6 @@ export interface FriendLink {
 }
 
 export const friendLinks: FriendLink[] = [
-	// ====== 在这里添加你的友链 ======
 	{
 		name: "芹香のblog",
 		url: "https://blog.serikawa.top",

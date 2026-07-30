@@ -100,7 +100,6 @@ import { friendLinks } from "../config/friends";
         user-select: all;
     }
 
-    /* 关键：使用 :global() 包裹动态创建的元素样式，避免 Astro scoped 哈希不匹配 */
     :global(.copy-tooltip) {
         position: fixed;
         z-index: 9999;
@@ -250,13 +249,10 @@ import { friendLinks } from "../config/friends";
 
     }
 
-
-    // 首次加载
     document.addEventListener(
         "DOMContentLoaded",
         initCopyLinks
     );
-
 
     // Astro 页面切换
     document.addEventListener(

@@ -53,7 +53,7 @@ PS C:\Users\NineBytes> pnpm -v
 ## 1.Git Clone
 找一个你放博客的位置，例如`D:\Fuwari`
 切换到你的博客存放目录：
-```
+```shell
 cd 'D:\Fuwari'
 ```
 克隆Fuwari仓库：
@@ -66,7 +66,7 @@ cd fuwari
 ```
 ## 2.下载ZIP
 点击[这里](https://github.com/saicaca/fuwari)打开Fuwari Github仓库
-```
+```txt
 Code
  ↓
 Download ZIP
