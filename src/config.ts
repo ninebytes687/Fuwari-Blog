@@ -53,11 +53,6 @@ export const navBarConfig: NavBarConfig = {
 			url: "https://stats.uptimerobot.com/WeknJyR7fh",
 			external: true,
 		},
-		{
-			name: "Umami",
-			url: "https://cloud.umami.is/share/1RUeIPnsi9lRbOUS",
-			external: true,
-		},
 	],
 };
 
