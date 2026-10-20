@@ -30,16 +30,11 @@ const seconds = Math.floor((timeDifference % (1000 * 60)) / 1000);
     function render() {
       const now = Date.now();
       const diff = Math.abs(now - targetTime);
-
       const days = Math.floor(diff / 86400000);
       const hours = Math.floor((diff % 86400000) / 3600000);
       const minutes = Math.floor((diff % 3600000) / 60000);
       const seconds = Math.floor((diff % 60000) / 1000);
-
       const text = `博客已运行: ${days} 天 ${hours} 小时 ${minutes} 分钟 ${seconds} 秒`;
-
-      // 用 class 选择器，把页面上所有匹配的节点都更新一遍
-      // （不管是不是移动端/桌面端各存在一份，都能覆盖到）
       document.querySelectorAll('.js-countdown').forEach((el) => {
         el.textContent = text;
       });
