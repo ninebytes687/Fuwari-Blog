@@ -76,11 +76,6 @@ export const profileConfig: ProfileConfig = {
 			icon: "fa6-brands:github",
 			url: "https://github.com/ninebytes687",
 		},
-		{
-			name: "Umami",
-			icon: "lucide:chart-no-axes-combined",
-			url: "https://cloud.umami.is/share/1RUeIPnsi9lRbOUS",
-		},
 	],
 };
 
